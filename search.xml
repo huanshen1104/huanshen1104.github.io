@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>Hello World</title>
+    <url>/2021/08/08/hello-world/</url>
+    <content><![CDATA[<p>Welcome to Hexo! This is your very first post. Check documentation for more info. </p>
+<span id="more"></span>
+<p>If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.</p>
+]]></content>
+      <categories>
+        <category>PHP</category>
+      </categories>
+      <tags>
+        <tag>PHP</tag>
+        <tag>嘿嘿</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>mytest</title>
+    <url>/2021/10/12/mytest/</url>
+    <content><![CDATA[<h2 id="呵呵"><a href="#呵呵" class="headerlink" title="呵呵"></a>呵呵</h2><p>啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊付</p>
+<span id="more"></span>
+
+<h2 id="嘿嘿"><a href="#嘿嘿" class="headerlink" title="嘿嘿"></a>嘿嘿</h2><p>酸辣粉接待室里看风景时反垄断</p>
+]]></content>
+  </entry>
+</search>
