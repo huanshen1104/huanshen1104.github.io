@@ -124,3 +124,10 @@ symbols_count_time:
   total_symbols: false
   total_time: false
   exclude_codeblock: false
+
+#搜索
+search:
+  path: search.xml
+  field: post
+  format: html
+  limit: 10000
