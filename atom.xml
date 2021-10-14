@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>青戈写字的地方</title>
+  
+  <subtitle>记录所做、所见、所思、所学</subtitle>
+  <link href="https://huanshen1104.github.io/atom.xml" rel="self"/>
+  
+  <link href="https://huanshen1104.github.io/"/>
+  <updated>2021-10-13T05:36:02.305Z</updated>
+  <id>https://huanshen1104.github.io/</id>
+  
+  <author>
+    <name>青戈</name>
+    
+  </author>
+  
+  <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>mytest</title>
+    <link href="https://huanshen1104.github.io/2021/10/12/mytest/"/>
+    <id>https://huanshen1104.github.io/2021/10/12/mytest/</id>
+    <published>2021-10-12T08:09:53.000Z</published>
+    <updated>2021-10-13T05:36:02.305Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="呵呵"><a href="#呵呵" class="headerlink" title="呵呵"></a>呵呵</h2><p>啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊付</p><span id="more"></span><h2 id="嘿嘿"><a href="#嘿嘿" class="headerlink" title="嘿嘿"></a>嘿嘿</h2><p>酸辣粉接待室里看风景时反垄断</p>]]></content>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;呵呵&quot;&gt;&lt;a href=&quot;#呵呵&quot; class=&quot;headerlink&quot; title=&quot;呵呵&quot;&gt;&lt;/a&gt;呵呵&lt;/h2&gt;&lt;p&gt;啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊付&lt;/p&gt;</summary>
+    
+    
+    
+    
+  </entry>
+  
+  <entry>
+    <title>Hello World</title>
+    <link href="https://huanshen1104.github.io/2021/08/08/hello-world/"/>
+    <id>https://huanshen1104.github.io/2021/08/08/hello-world/</id>
+    <published>2021-08-07T16:00:00.000Z</published>
+    <updated>2021-10-13T05:23:37.761Z</updated>
+    
+    <content type="html"><![CDATA[<p>Welcome to Hexo! This is your very first post. Check documentation for more info. </p><span id="more"></span><p>If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.</p>]]></content>
+    
+    
+    <summary type="html">&lt;p&gt;Welcome to Hexo! This is your very first post. Check documentation for more info. &lt;/p&gt;</summary>
+    
+    
+    
+    <category term="PHP" scheme="https://huanshen1104.github.io/categories/PHP/"/>
+    
+    
+    <category term="PHP" scheme="https://huanshen1104.github.io/tags/PHP/"/>
+    
+    <category term="嘿嘿" scheme="https://huanshen1104.github.io/tags/%E5%98%BF%E5%98%BF/"/>
+    
+  </entry>
+  
+</feed>
