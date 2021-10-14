@@ -3,17 +3,17 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: 燕归巢
-subtitle: '不忘初心'
+title: 青戈写字的地方
+subtitle: '记录所做、所见、所思、所学'
 description: '只想成为一个温柔而有趣的人'
-keywords: ''
+keywords: 'IT，互联网，编程，绘画'
 author: 青戈
 language: zh-CN
 timezone: ''
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
-url: http://example.com
+url: https://huanshen1104.github.io
 permalink: :year/:month/:day/:title/
 permalink_defaults:
 pretty_urls:
@@ -131,3 +131,6 @@ search:
   field: post
   format: html
   limit: 10000
+
+#订阅
+plugins: hexo-generate-feed

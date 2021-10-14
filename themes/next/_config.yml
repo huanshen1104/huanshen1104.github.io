@@ -178,7 +178,7 @@ site_state: true
 # Value before `||` delimiter is the target permalink, value after `||` delimiter is the name of Font Awesome icon.
 social:
   #GitHub: https://github.com/huanshen1104 || fab fa-github
-  E-Mail: huanshen1104@126.com || fa fa-envelope
+  E-Mail: mailto:huanshen1104@126.com || fa fa-envelope
   Weibo: https://weibo.com/huanshen1104 || fab fa-weibo
   #Google: https://plus.google.com/yourname || fab fa-google
   #Twitter: https://twitter.com/huanshen1104 || fab fa-twitter
@@ -274,7 +274,7 @@ tag_icon: true
 # Front-matter variable (unsupport animation).
 reward_settings:
   # If true, reward will be displayed in every article by default.
-  enable: true
+  enable: false
   animation: false
   comment: 如果对你有用，记得打赏噢.
 
@@ -576,7 +576,7 @@ quicklink:
 # Multiple Comment System Support
 comments:
   # Available values: tabs | buttons
-  style: tabs
+  style: buttons
   # Choose a comment system to be displayed by default.
   # Available values: changyan | disqus | disqusjs | gitalk | livere | valine
   active:
@@ -628,7 +628,7 @@ valine:
   appkey: BhloPKTG5fMaRSyoB6I76Ys5
   notify: false # Mail notifier
   verify: false # Verification code
-  placeholder: 欢迎留言
+  placeholder: 来来来，撩一撩~
   avatar: mm # Gravatar style
   guest_info: nick,mail,link # Custom comment header
   pageSize: 10 # Pagination size
@@ -724,7 +724,7 @@ firestore:
 # Show Views / Visitors of the website / page with busuanzi.
 # Get more information on http://ibruce.info/2015/04/04/busuanzi
 busuanzi_count:
-  enable: false
+  enable: true
   total_visitors: true
   total_visitors_icon: fa fa-user
   total_views: true
