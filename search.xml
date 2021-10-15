@@ -1,27 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Hello World</title>
-    <url>/2021/08/08/hello-world/</url>
-    <content><![CDATA[<p>Welcome to Hexo! This is your very first post. Check documentation for more info. </p>
-<span id="more"></span>
-<p>If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.</p>
-]]></content>
-      <categories>
-        <category>PHP</category>
-      </categories>
-      <tags>
-        <tag>PHP</tag>
-        <tag>嘿嘿</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>mytest</title>
-    <url>/2021/10/12/mytest/</url>
-    <content><![CDATA[<h2 id="呵呵"><a href="#呵呵" class="headerlink" title="呵呵"></a>呵呵</h2><p>啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊付</p>
+    <title>使用acme.sh申请免费的HTTPS证书</title>
+    <url>/2021/08/15/%E4%BD%BF%E7%94%A8acme-sh%E7%94%B3%E8%AF%B7%E5%85%8D%E8%B4%B9%E7%9A%84HTTPS%E8%AF%81%E4%B9%A6/</url>
+    <content><![CDATA[<p>最近打算给自己的网站申请免费的HTTPS证书，经过多番搜索相关资料，最后将其实际应用到了自己的网站上，在此记录下整个过程，以做备份。</p>
 <span id="more"></span>
 
-<h2 id="嘿嘿"><a href="#嘿嘿" class="headerlink" title="嘿嘿"></a>嘿嘿</h2><p>酸辣粉接待室里看风景时反垄断</p>
+<h1 id="安装acme-sh"><a href="#安装acme-sh" class="headerlink" title="安装acme.sh"></a>安装acme.sh</h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl https://get.acme.sh | sh</span><br></pre></td></tr></table></figure>
+<p>该安装脚本做了几件事：</p>
+<ol>
+<li>把 acme.sh 安装到了 home 目录下：~/.acme.sh/</li>
+<li>创建了一个 bash 的 alias, 方便使用: alias acme.sh=~/.acme.sh/acme.sh</li>
+<li>创建了cronjob，每天 0:00点自动检测所有的证书，如果快过期了，则会自动更新证书。</li>
+</ol>
+<p>如果因为网络问题，无法连接到 <a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com</a> 域名，则要手动更改安装脚本内容：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 下载并保存脚本</span><br><span class="line">curl https://get.acme.sh -o acme_install.sh</span><br><span class="line"># 更改脚本内域名，使用代理加速</span><br><span class="line">sed -i &#x27;s/raw/ghproxy.com\/https:\/\/raw/g&#x27; acme_install.sh</span><br><span class="line"># 安装</span><br><span class="line">chmod +x acme_install.sh</span><br><span class="line">./acme_install.sh</span><br></pre></td></tr></table></figure>
+
+<h1 id="注册-ZeroSSL-账号"><a href="#注册-ZeroSSL-账号" class="headerlink" title="注册 ZeroSSL 账号"></a>注册 ZeroSSL 账号</h1><blockquote>
+<p><strong>acme.sh 默认使用 Let’s Encrypt 进行证书注册，本文使用 ZeroSSL 进行注册，所以需要进行相关配置</strong></p>
+</blockquote>
+<p>官网注册：<a href="https://zerossl.com/">https://zerossl.com/</a></p>
+<p>注册完成之后进入 Dashboard，选择右侧的 Developer 标签，生成 <strong>EAB Credentials</strong> 并记录下来。</p>
+<h1 id="将-acme-sh-的注册服务器改为-ZeroSSL"><a href="#将-acme-sh-的注册服务器改为-ZeroSSL" class="headerlink" title="将 acme.sh 的注册服务器改为 ZeroSSL"></a>将 acme.sh 的注册服务器改为 ZeroSSL</h1><blockquote>
+<p>文档：<a href="https://github.com/acmesh-official/acme.sh/wiki/ZeroSSL.com-CA">https://github.com/acmesh-official/acme.sh/wiki/ZeroSSL.com-CA</a></p>
+</blockquote>
+<p>运行，替换 eab-kid 和 eab-hmac-key 为上一步中生成的：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">acme.sh --register-account --server zerossl \</span><br><span class="line">        --eab-kid xxxxxxxxxxxx  \</span><br><span class="line">        --eab-hmac-key xxxxxxxxx</span><br></pre></td></tr></table></figure>
+<p>将其设置为默认 Server</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">acme.sh --set-default-ca --server zerossl</span><br></pre></td></tr></table></figure>
+
+<h1 id="签发证书"><a href="#签发证书" class="headerlink" title="签发证书"></a>签发证书</h1><p>本文章使用 DNS 验证的方法来验证域名，acme.sh 可以通过 DNS 提供商的 API 自动设置验证记录，具体用法详见文档：<a href="https://github.com/acmesh-official/acme.sh/wiki/dnsapi">https://github.com/acmesh-official/acme.sh/wiki/dnsapi</a><br>常用的 CloudFlare 、 DNSPod 、 CloudXNS 、阿里云 等DNS服务都支持</p>
+<h2 id="dns方式验证域名获取证书"><a href="#dns方式验证域名获取证书" class="headerlink" title="dns方式验证域名获取证书"></a>dns方式验证域名获取证书</h2><p>这里以阿里云为例，登录其后台找到账号的秘钥，执行下面命令即可</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export Ali_Key=&quot;****************************&quot;</span><br><span class="line">export Ali_Secret=&quot;**************************&quot; </span><br></pre></td></tr></table></figure>
+
+<p>获取证书，可以同时跟多个域名（子域名）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">acme.sh --issue \</span><br><span class="line">        --dns dns_ali \</span><br><span class="line">        -d example.com \</span><br><span class="line">        -d *.example.com</span><br></pre></td></tr></table></figure>
+<p>其中：</p>
+<ul>
+<li><p>–dns 指定 DNS 服务商，dns_ali 代表阿里云，还有 dns_cf 代表 CloudFlare，更多的字段见 <a href="https://github.com/acmesh-official/acme.sh/tree/master/dnsapi">https://github.com/acmesh-official/acme.sh/tree/master/dnsapi</a></p>
+<p>如果不使用 API 自动添加验证，则不用添加后续参数，如：acme.sh –issue –dns -d example.com ….</p>
+</li>
+<li><p>-d *.example.com 表示签发泛域名证书</p>
+</li>
+</ul>
+<p>执行命令之后看输出的内容可以确定证书所在位置，这时就申请成功了。</p>
+<h1 id="安装证书"><a href="#安装证书" class="headerlink" title="安装证书"></a>安装证书</h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sh acme.sh  --installcert  -d example.com   \</span><br><span class="line">        --keypath   /var/www/ssl/private.key \ </span><br><span class="line">        --fullchainpath /var/www/ssl/chained.pem \</span><br><span class="line">        --reloadcmd  &quot;service nginx force-reload&quot;</span><br></pre></td></tr></table></figure>
+<p>其中：</p>
+<ul>
+<li><del>–ecc 表示安装 ECC 证书</del></li>
+<li>–key-file 和 -fullchain-file 后接想要安装到的目录及证书名</li>
+<li>–reloadcmd 后接服务的重启命令，程序自动续期证书后会运行该命令使其生效</li>
+</ul>
+<h1 id="启用https服务"><a href="#启用https服务" class="headerlink" title="启用https服务"></a>启用https服务</h1><p>修改服务器的配置文件启用HTTPS，下面以nginx为例</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen               443 ssl;</span><br><span class="line"></span><br><span class="line">    server_name          www.example.com example.com;</span><br><span class="line"></span><br><span class="line">    ssl_certificate      /var/www/ssl/chained.pem; #对应上面步骤安装证书后的路径</span><br><span class="line">    ssl_certificate_key  /var/www/ssl/private.key;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        proxy_set_header         Host             example.com;</span><br><span class="line">        proxy_set_header         X-Real_IP        $remote_addr;</span><br><span class="line">        proxy_set_header         X-Forwarded-For  $proxy_add_x_forwarded_for;</span><br><span class="line">        proxy_pass               http://127.0.0.1:2368;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name  *.example.com example.com;</span><br><span class="line"></span><br><span class="line">    return 301 https://$host$request_uri;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>配置好后，重启服务器即可：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">service nginx restart</span><br></pre></td></tr></table></figure>
+
+<p>最后，记得去阿里云后台打开服务器443端口。</p>
+<p>大功告成！</p>
 ]]></content>
+      <categories>
+        <category>计算机知识</category>
+        <category>web开发</category>
+      </categories>
+      <tags>
+        <tag>HTTPS</tag>
+      </tags>
   </entry>
 </search>
