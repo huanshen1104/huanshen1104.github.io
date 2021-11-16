@@ -10,7 +10,7 @@ tags: [hexo]
 
 ### 初始搭建流程
 - 创建仓库之后创建master（放静态文件）和hexo（放源码）两个分支；
-- 使用`git clone -b hexo` 仓库地址`命令拷贝 `hexo` 分支到本地；
+- 使用`git clone -b hexo 仓库地址` 命令拷贝 `hexo` 分支到本地；
 - 进入本地仓库文件夹，保持在hexo分支，依次执行`npm install hexo`、`hexo init`、`npm install` 和 `npm install hexo-deployer-git`；
 - 根据需要修改hexo配置文件，注意deplay参数的分支应该为master；
 - 依次执行`git add .` 、`git commit -m "..."` 、`git push origin hexo` 把源码提交到远程hexo分支；
