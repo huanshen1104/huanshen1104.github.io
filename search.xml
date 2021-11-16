@@ -142,7 +142,7 @@
 <li>进入本地仓库文件夹，保持在hexo分支，依次执行<code>npm install hexo</code>、<code>npm install</code>；</li>
 </ul>
 <blockquote>
-<p>注：这里不需要 <code>hexo inie</code> 命令了，另外，平时安装插件的时候记得加上 <code>--save</code> 参数，这样 <code>package.json</code>文件里就会写入插件的安装信息，当我们换电脑的时候，只需要 <code>npm install</code> 命令即可安装所有插件。</p>
+<p>注：这里不需要 <code>hexo init</code> 命令了，另外，平时安装插件的时候记得加上 <code>--save</code> 参数，这样 <code>package.json</code>文件里就会写入插件的安装信息，当我们换电脑的时候，只需要 <code>npm install</code> 命令即可安装所有插件。</p>
 </blockquote>
 ]]></content>
       <categories>
