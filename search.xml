@@ -117,7 +117,7 @@
 
 <h3 id="初始搭建流程"><a href="#初始搭建流程" class="headerlink" title="初始搭建流程"></a>初始搭建流程</h3><ul>
 <li>创建仓库之后创建master（放静态文件）和hexo（放源码）两个分支；</li>
-<li>使用<code>git clone -b hexo</code> 仓库地址<code>命令拷贝 </code>hexo` 分支到本地；</li>
+<li>使用<code>git clone -b hexo 仓库地址</code> 命令拷贝 <code>hexo</code> 分支到本地；</li>
 <li>进入本地仓库文件夹，保持在hexo分支，依次执行<code>npm install hexo</code>、<code>hexo init</code>、<code>npm install</code> 和 <code>npm install hexo-deployer-git</code>；</li>
 <li>根据需要修改hexo配置文件，注意deplay参数的分支应该为master；</li>
 <li>依次执行<code>git add .</code> 、<code>git commit -m &quot;...&quot;</code> 、<code>git push origin hexo</code> 把源码提交到远程hexo分支；</li>
