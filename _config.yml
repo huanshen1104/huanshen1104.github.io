@@ -4,9 +4,9 @@
 
 # Site
 title: 青戈的博客
-subtitle: '记录所做、所见、所思、所学'
+subtitle: '记录所见、所做、所思、所学'
 description: '只想成为一个温柔而有趣的人'
-keywords: 'IT，互联网，编程，绘画，理财'
+keywords: '互联网，编程，绘画，理财'
 author: 青戈
 language: zh-CN
 timezone: ''
@@ -84,7 +84,10 @@ category_generator:
 # Category & Tag
 default_category: uncategorized
 category_map:
+  开卷有益: reading
+  网站建设: web
 tag_map:
+  理财: money
 
 # Metadata elements
 ## https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta

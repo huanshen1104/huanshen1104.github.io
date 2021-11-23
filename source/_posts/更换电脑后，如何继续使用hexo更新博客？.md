@@ -37,7 +37,7 @@ public/
 
 ### 更换电脑后的流程
 换电脑后，按照以下步骤操作：
-- 使用`git clone -b hexo` 仓库地址`命令拷贝 `hexo` 分支到本地；
+- 使用`git clone -b hexo 仓库地址 ` 命令拷贝 `hexo` 分支到本地；
 - 进入本地仓库文件夹，保持在hexo分支，依次执行`npm install hexo`、`npm install`；
 
 >注：这里不需要 `hexo init` 命令了，另外，平时安装插件的时候记得加上 `--save` 参数，这样 `package.json`文件里就会写入插件的安装信息，当我们换电脑的时候，只需要 `npm install` 命令即可安装所有插件。
