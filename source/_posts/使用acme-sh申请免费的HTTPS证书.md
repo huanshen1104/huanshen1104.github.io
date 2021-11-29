@@ -3,6 +3,7 @@ title: 使用acme.sh申请免费的HTTPS证书
 date: 2020-8-15 15:48:36
 categories: [网站建设]
 tags: [HTTPS]
+cover: cover.png
 ---
 
 最近把自己的网站从HTTP升级为HTTPS，在这里把过程及踩过的坑记录一下。
