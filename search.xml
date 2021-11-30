@@ -144,6 +144,7 @@
 <blockquote>
 <p>注：这里不需要 <code>hexo init</code> 命令了，另外，平时安装插件的时候记得加上 <code>--save</code> 参数，这样 <code>package.json</code>文件里就会写入插件的安装信息，当我们换电脑的时候，只需要 <code>npm install</code> 命令即可安装所有插件。</p>
 </blockquote>
+<p>最后说一下，因为github pages要求代码库不能是私有的，如果你觉得用这种方式保存源码不够安全的话，可以重新创建一个私有库专门保存源码，使用流程上也不会有太大的变化。</p>
 ]]></content>
       <categories>
         <category>网站建设</category>
