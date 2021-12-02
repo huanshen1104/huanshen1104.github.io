@@ -1,8 +1,8 @@
 ---
 title: 使用acme.sh申请免费的HTTPS证书
 date: 2020-8-15 15:48:36
-categories: [编程艺术, 网站建设]
-tags: [HTTPS]
+categories: [网站建设]
+tags: [Https]
 cover: cover.png
 ---
 
