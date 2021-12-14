@@ -3,7 +3,7 @@ title: 使用acme.sh申请免费的HTTPS证书
 date: 2020-8-15 15:48:36
 categories: [网站建设]
 tags: [Https]
-cover: cover.png
+cover: https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031633840.png
 ---
 
 最近把自己的网站从HTTP升级为HTTPS，在这里把过程及踩过的坑记录一下。
@@ -65,9 +65,9 @@ acme.sh --set-default-ca --server zerossl
 常用的 CloudFlare 、 DNSPod 、 CloudXNS 、阿里云 等DNS服务都支持。
 
 以阿里云为例，登录后台找到账号的秘钥(建议创建子账号来专门管理此功能)：
-![](AccessKey.png)
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031634278.png)
 如果你使用的是子账号，一定要给子账号开通以下权限：
-![](阿里云dns子账号授权.png)
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031634007.png)
 接下来执行下面命令即可：
 
 ```

@@ -2,8 +2,8 @@
 title: （转载）MySQL中的锁机制
 date: 2018-12-01 15:56:43
 categories: [编程艺术]
-tags: [Mysql]
-cover: cover.jpg
+tags: [MySQL]
+cover: https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031614620.jpg
 ---
 
 **锁是计算机协调多个进程或线程并发访问某一资源的机制**。在数据库中，除传统的 计算资源（如CPU、RAM、I/O等）的争用以外，数据也是一种供许多用户共享的资源。如何保证数据并发访问的一致性、有效性是所有数据库必须解决的一 个问题，锁冲突也是影响数据库并发访问性能的一个重要因素。从这个角度来说，锁对数据库而言显得尤其重要，也更加复杂。本章我们着重讨论MySQL锁机制 的特点，常见的锁问题，以及解决MySQL锁问题的一些方法或建议。
@@ -28,11 +28,11 @@ Mysql用到了很多这种锁机制，比如行锁，表锁等，读锁，写锁
 **MyISAM存储引擎的写锁阻塞读例子**：   
 当一个线程获得对一个表的写锁后，只有持有锁的线程可以对表进行更新操作。其他线程的读、写操作都会等待，直到锁被释放为止。   
 
-![](a.png)
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031556988.png)
 
 **MyISAM存储引擎的读锁阻塞写例子:**   
 一个session使用LOCK TABLE命令给表film_text加了读锁，这个session可以查询锁定表中的记录，但更新或访问其他表都会提示错误；同时，另外一个session可以查询表中的记录，但更新就会出现锁等待。   
-![](b.png)
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031557619.png)
 
 ## 如何加表锁
 MyISAM在执行查询语句（SELECT）前，会自动给涉及的所有表加读锁，在执行更新操作 （UPDATE、DELETE、INSERT等）前，会自动给涉及的表加写锁，这个过程并不需要用户干预，因此，用户一般不需要直接用LOCK TABLE命令给MyISAM表显式加锁。在示例中，显式加锁基本上都是为了演示而已，并非必须如此。   
@@ -109,7 +109,7 @@ MyISAM存储引擎有一个系统变量concurrent_insert，专门用以控制其
 在下面的例子中，session\_1获得了一个表的READ LOCAL锁，该线程可以对表进行查询操作，但不能对表进行更新操作；其他的线程（session\_2），虽然不能对表进行删除和更新操作，但却可以对该表进行并发插入操作，这里假设该表中间不存在空洞。
 
 **MyISAM存储引擎的读写（INSERT）并发例子：**   
-![](c.png)   
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031558874.png) 
 可以利用MyISAM存储引擎的并发插入特性，来解决应 用中对同一表查询和插入的锁争用。例如，将concurrent_insert系统变量设为2，总是允许并发插入；同时，通过定期在系统空闲时段执行 OPTIMIZE TABLE语句来整理空间碎片，收回因删除记录而产生的中间空洞。
 
 ## MyISAM的锁调度
@@ -174,7 +174,7 @@ delete from table where ?;
 数据库的事务隔离越严格，并发副作用越小，但付出的代价也就越大，因为事务隔离实质上就是使事务在一定程度上 “串行化”进行，这显然与“并发”是矛盾的。同时，不同的应用对读一致性和事务隔离程度的要求也是不同的，比如许多应用对“不可重复读”和“幻读”并不敏感，可能更关心数据并发访问的能力。
 
 为了解决“隔离”与“并发”的矛盾，ISO/ANSI SQL92定义了4个事务隔离级别，每个级别的隔离程度不同，允许出现的副作用也不同，应用可以根据自己的业务逻辑要求，通过选择不同的隔离级别来平衡 “隔离”与“并发”的矛盾。下表很好地概括了这4个隔离级别的特性。   
-![](d.png)
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031602347.png)
 
 ## 获取InonoD行锁争用情况
 
@@ -182,7 +182,7 @@ delete from table where ?;
 ````
 mysql> show status like 'innodb_row_lock%';
 ````
-![](e.png)
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031608290.png)
 
 如果发现锁争用比较严重，如InnoDB\_row\_lock\_waits和InnoDB\_row\_lock\_time_avg的值比较高，还可以通过设置InnoDB Monitors来进一步观察发生锁冲突的表、数据行等，并分析锁争用的原因。
 
@@ -202,7 +202,7 @@ InnoDB实现了以下两种类型的行锁。
 *   意向排他锁（IX）：事务打算给数据行加排他锁，事务在给一个数据行加排他锁前必须先取得该表的IX锁。
 
 **InnoDB行锁模式兼容性列表:**   
-![](f.png)
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031608571.png)
 
 如果一个事务请求的锁模式与当前的锁兼容，InnoDB就将请求的锁授予该事务；反之，如果两者不兼容，该事务就要等待锁释放。   
 意向锁是InnoDB自动加的，不需用户干预。对于UPDATE、DELETE和INSERT语句，InnoDB会自动给涉及数据集加排他锁（X)；对于普通SELECT语句，InnoDB不会加任何锁。   
@@ -230,7 +230,7 @@ Query OK, 4 rows affected (0.00 sec)
 ````
 > Records: 4 Duplicates: 0 Warnings: 0
 
-![](g.png)
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031609705.png)
 
 在上面的例子中，看起来session\_1只给一行加了排他锁，但session\_2在请求其他行的排他锁时，却出现了锁等待！**原因就是在没有索引的情况下，InnoDB只能使用表锁。**当我们给其增加一个索引后，InnoDB就只锁定了符合条件的行，如下例所示：   
 创建tab\_with\_index表，id字段有普通索引：
@@ -239,7 +239,7 @@ mysql> create table tab_with_index(id int,name varchar(10)) engine=innodb;
 mysql> alter table tab_with_index add index id(id);
 ````
 
-![](h.png)
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031609475.png)
 
 （2）由于MySQL的行锁是针对索引加的锁，不是针对记录加的锁，所以虽然是访问不同行的记录，但是如果是使用相同的索引键，是会出现锁冲突的。应用设计的时候要注意这一点。   
 在下面的例子中，表tab\_with\_index的id字段有索引，name字段没有索引：
@@ -256,10 +256,10 @@ mysql> insert into tab_with_index  values(1,'4');
 mysql> select * from tab_with_index where id = 1;
 ````
 
-![](i.png)
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031609546.png)
 
 InnoDB存储引擎使用相同索引键的阻塞例子   
-![](j.png)
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031609643.png)
 
 （3）当表有多个索引的时候，不同的事务可以使用不同的索引锁定不同的行，另外，不论是使用主键索引、唯一索引或普通索引，InnoDB都会使用行锁来对数据加锁。   
 在下面的例子中，表tab\_with\_index的id字段有主键索引，name字段有普通索引：
@@ -270,7 +270,7 @@ mysql> alter table tab_with_index add index name(name);
 > Warnings: 0
 
 **InnoDB存储引擎的表使用不同索引的阻塞例子**   
-![](k.png)
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031609643.png)
 
 （4）即便在条件中使用了索引字段，但是否使用索引来检索数据是由MySQL通过判断不同执行计划的代价来决定的，如果MySQL认为全表扫描效率更高，比如对一些很小的表，它就不会使用索引，这种情况下InnoDB将使用表锁，而不是行锁。因此，在分析锁冲突 时，别忘了检查SQL的执行计划，以确认是否真正使用了索引。   
 比如，在tab\_with\_index表里的name字段有索引，但是name字段是varchar类型的，检索值的数据类型与索引字段不同，虽然MySQL能够进行数据类型转换，但却不会使用索引，从而导致InnoDB使用表锁。通过用explain检查两条SQL的执行计划，我们可以清楚地看到这一点。
@@ -295,7 +295,7 @@ InnoDB使用间隙锁的目的，一方面是为了防止幻读，以满足相�
 
 还要特别说明的是，InnoDB除了通过范围条件加锁时使用间隙锁外，如果使用相等条件请求给一个不存在的记录加锁，InnoDB也会使用间隙锁！下面这个例子假设emp表中只有101条记录，其empid的值分别是1,2,……,100,101。   
 InnoDB存储引擎的间隙锁阻塞例子   
-![](l.png)
+![](https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031610658.png)
 
 # 小结
 
