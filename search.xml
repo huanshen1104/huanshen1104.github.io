@@ -7,8 +7,8 @@
 <h1 id="MySQL锁概述"><a href="#MySQL锁概述" class="headerlink" title="MySQL锁概述"></a>MySQL锁概述</h1><p>相对其他数据库而言，MySQL的锁机制比较简单，其最 显著的特点是不同的存储引擎支持不同的锁机制。比如，MyISAM和MEMORY存储引擎采用的是表级锁（table-level locking）；BDB存储引擎采用的是页面锁（page-level locking），但也支持表级锁；InnoDB存储引擎既支持行级锁（row-level locking），也支持表级锁，但默认情况下是采用行级锁。 <br><strong>表级锁：</strong>开销小，加锁快；不会出现死锁；锁定粒度大，发生锁冲突的概率最高，并发度最低。 <br><strong>行级锁：</strong>开销大，加锁慢；会出现死锁；锁定粒度最小，发生锁冲突的概率最低，并发度也最高。 <br><strong>页面锁：</strong>开销和加锁时间界于表锁和行锁之间；会出现死锁；锁定粒度界于表锁和行锁之间，并发度一般 <br>从上述特点可见，很难笼统地说哪种锁更好，只能就具体应用的特点来说哪种锁更合适！仅从锁的角度来说：表级锁更适合于以查询为主，只有少量按索引条件更新数据的应用，如Web应用；而行级锁则更适合于有大量按索引条件并发更新少量不同数据，同时又有并发查询的应用，如一些在线事务处理（OLTP）系统。</p>
 <h1 id="MyISAM表锁"><a href="#MyISAM表锁" class="headerlink" title="MyISAM表锁"></a>MyISAM表锁</h1><p><strong>MySQL的表级锁有两种模式</strong>：<strong>表共享读锁（Table Read Lock）</strong> 和 <strong>表排它写锁（Table Write Lock）</strong>。 <br>对MyISAM表的读操作，不会阻塞其他用户对同一表的读请求，但会阻塞对同一表的写请求；对 MyISAM表的写操作，则会阻塞其他用户对同一表的读和写操作；MyISAM表的读操作与写操作之间，以及写操作之间是串行的！根据下图所示的例子可以知道，当一个线程获得对一个表的写锁后，只有持有锁的线程可以对表进行更新操作，其他线程的读、写操作都会等待，直到锁被释放为止。</p>
 <p><strong>MyISAM存储引擎的写锁阻塞读例子</strong>： <br>当一个线程获得对一个表的写锁后，只有持有锁的线程可以对表进行更新操作。其他线程的读、写操作都会等待，直到锁被释放为止。   </p>
-<p><img src="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/a.png"></p>
-<p><strong>MyISAM存储引擎的读锁阻塞写例子:</strong> <br>一个session使用LOCK TABLE命令给表film_text加了读锁，这个session可以查询锁定表中的记录，但更新或访问其他表都会提示错误；同时，另外一个session可以查询表中的记录，但更新就会出现锁等待。 <br><img src="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/b.png"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031556988.png"></p>
+<p><strong>MyISAM存储引擎的读锁阻塞写例子:</strong> <br>一个session使用LOCK TABLE命令给表film_text加了读锁，这个session可以查询锁定表中的记录，但更新或访问其他表都会提示错误；同时，另外一个session可以查询表中的记录，但更新就会出现锁等待。 <br><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031557619.png"></p>
 <h2 id="如何加表锁"><a href="#如何加表锁" class="headerlink" title="如何加表锁"></a>如何加表锁</h2><p>MyISAM在执行查询语句（SELECT）前，会自动给涉及的所有表加读锁，在执行更新操作 （UPDATE、DELETE、INSERT等）前，会自动给涉及的表加写锁，这个过程并不需要用户干预，因此，用户一般不需要直接用LOCK TABLE命令给MyISAM表显式加锁。在示例中，显式加锁基本上都是为了演示而已，并非必须如此。   </p>
 <p>给MyISAM表显示加锁，一般是为了在一定程度模拟事务操作，实现对某一时间点多个表的一致性读取。例如， 有一个订单表orders，其中记录有各订单的总金额total，同时还有一个订单明细表order_detail，其中记录有各订单每一产品的金额小计 subtotal，假设我们需要检查这两个表的金额合计是否相符，可能就需要执行如下两条SQL：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Select sum(total) from orders;</span><br><span class="line">Select sum(subtotal) from order_detail;</span><br></pre></td></tr></table></figure>
@@ -53,7 +53,7 @@
 <li>当concurrent_insert设置为2时，无论MyISAM表中有没有空洞，都允许在表尾并发插入记录。</li>
 </ul>
 <p>在下面的例子中，session_1获得了一个表的READ LOCAL锁，该线程可以对表进行查询操作，但不能对表进行更新操作；其他的线程（session_2），虽然不能对表进行删除和更新操作，但却可以对该表进行并发插入操作，这里假设该表中间不存在空洞。</p>
-<p><strong>MyISAM存储引擎的读写（INSERT）并发例子：</strong> <br><img src="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/c.png"> <br>可以利用MyISAM存储引擎的并发插入特性，来解决应 用中对同一表查询和插入的锁争用。例如，将concurrent_insert系统变量设为2，总是允许并发插入；同时，通过定期在系统空闲时段执行 OPTIMIZE TABLE语句来整理空间碎片，收回因删除记录而产生的中间空洞。</p>
+<p><strong>MyISAM存储引擎的读写（INSERT）并发例子：</strong> <br><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031558874.png"><br>可以利用MyISAM存储引擎的并发插入特性，来解决应 用中对同一表查询和插入的锁争用。例如，将concurrent_insert系统变量设为2，总是允许并发插入；同时，通过定期在系统空闲时段执行 OPTIMIZE TABLE语句来整理空间碎片，收回因删除记录而产生的中间空洞。</p>
 <h2 id="MyISAM的锁调度"><a href="#MyISAM的锁调度" class="headerlink" title="MyISAM的锁调度"></a>MyISAM的锁调度</h2><p>前面讲过，MyISAM存储引擎的读锁和写锁是互斥的，读写操作是串行的。那么，一个进程请求某个 MyISAM表的读锁，同时另一个进程也请求同一表的写锁，MySQL如何处理呢？<strong>答案是写进程先获得锁。不仅如此，即使读请求先到锁等待队列，写请求后到，写锁也会插到读锁请求之前！这是因为MySQL认为写请求一般比读请求要重要</strong>。这也正是MyISAM表不太适合于有大量更新操作和查询操作应用的原因，因为，大量的更新操作会造成查询操作很难获得读锁，从而可能永远阻塞。这种情况有时可能会变得非常糟糕！幸好我们可以通过一些设置来调节MyISAM的调度行为。</p>
 <ul>
 <li>通过指定启动参数low-priority-updates，使MyISAM引擎默认给予读请求以优先的权利。</li>
@@ -91,10 +91,10 @@
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from table where ? lock in share mode;</span><br><span class="line">select * from table where ? for update;</span><br><span class="line">insert into table values (…);</span><br><span class="line">update table set ? where ?;</span><br><span class="line">delete from table where ?;</span><br></pre></td></tr></table></figure></li>
 </ul>
 <p>数据库的事务隔离越严格，并发副作用越小，但付出的代价也就越大，因为事务隔离实质上就是使事务在一定程度上 “串行化”进行，这显然与“并发”是矛盾的。同时，不同的应用对读一致性和事务隔离程度的要求也是不同的，比如许多应用对“不可重复读”和“幻读”并不敏感，可能更关心数据并发访问的能力。</p>
-<p>为了解决“隔离”与“并发”的矛盾，ISO/ANSI SQL92定义了4个事务隔离级别，每个级别的隔离程度不同，允许出现的副作用也不同，应用可以根据自己的业务逻辑要求，通过选择不同的隔离级别来平衡 “隔离”与“并发”的矛盾。下表很好地概括了这4个隔离级别的特性。 <br><img src="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/d.png"></p>
+<p>为了解决“隔离”与“并发”的矛盾，ISO/ANSI SQL92定义了4个事务隔离级别，每个级别的隔离程度不同，允许出现的副作用也不同，应用可以根据自己的业务逻辑要求，通过选择不同的隔离级别来平衡 “隔离”与“并发”的矛盾。下表很好地概括了这4个隔离级别的特性。 <br><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031602347.png"></p>
 <h2 id="获取InonoD行锁争用情况"><a href="#获取InonoD行锁争用情况" class="headerlink" title="获取InonoD行锁争用情况"></a>获取InonoD行锁争用情况</h2><p>可以通过检查InnoDB_row_lock状态变量来分析系统上的行锁的争夺情况：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show status like &#x27;innodb_row_lock%&#x27;;</span><br></pre></td></tr></table></figure>
-<p><img src="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/e.png"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031608290.png"></p>
 <p>如果发现锁争用比较严重，如InnoDB_row_lock_waits和InnoDB_row_lock_time_avg的值比较高，还可以通过设置InnoDB Monitors来进一步观察发生锁冲突的表、数据行等，并分析锁争用的原因。</p>
 <h2 id="InnoDB的行锁模式及加锁方法"><a href="#InnoDB的行锁模式及加锁方法" class="headerlink" title="InnoDB的行锁模式及加锁方法"></a>InnoDB的行锁模式及加锁方法</h2><p>InnoDB实现了以下两种类型的行锁。</p>
 <ul>
@@ -107,7 +107,7 @@
 <li>  意向共享锁（IS）：事务打算给数据行共享锁，事务在给一个数据行加共享锁前必须先取得该表的IS锁。</li>
 <li>  意向排他锁（IX）：事务打算给数据行加排他锁，事务在给一个数据行加排他锁前必须先取得该表的IX锁。</li>
 </ul>
-<p><strong>InnoDB行锁模式兼容性列表:</strong> <br><img src="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/f.png"></p>
+<p><strong>InnoDB行锁模式兼容性列表:</strong> <br><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031608571.png"></p>
 <p>如果一个事务请求的锁模式与当前的锁兼容，InnoDB就将请求的锁授予该事务；反之，如果两者不兼容，该事务就要等待锁释放。 <br>意向锁是InnoDB自动加的，不需用户干预。对于UPDATE、DELETE和INSERT语句，InnoDB会自动给涉及数据集加排他锁（X)；对于普通SELECT语句，InnoDB不会加任何锁。 <br>事务可以通过以下语句显式给记录集加共享锁或排他锁：</p>
 <ul>
 <li>  共享锁（S）：<code>SELECT * FROM table_name WHERE ... LOCK IN SHARE MODE</code>。</li>
@@ -125,11 +125,11 @@
 <blockquote>
 <p>Records: 4 Duplicates: 0 Warnings: 0</p>
 </blockquote>
-<p><img src="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/g.png"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031609705.png"></p>
 <p>在上面的例子中，看起来session_1只给一行加了排他锁，但session_2在请求其他行的排他锁时，却出现了锁等待！<strong>原因就是在没有索引的情况下，InnoDB只能使用表锁。</strong>当我们给其增加一个索引后，InnoDB就只锁定了符合条件的行，如下例所示： <br>创建tab_with_index表，id字段有普通索引：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; create table tab_with_index(id int,name varchar(10)) engine=innodb;</span><br><span class="line">mysql&gt; alter table tab_with_index add index id(id);</span><br></pre></td></tr></table></figure>
 
-<p><img src="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/h.png"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031609475.png"></p>
 <p>（2）由于MySQL的行锁是针对索引加的锁，不是针对记录加的锁，所以虽然是访问不同行的记录，但是如果是使用相同的索引键，是会出现锁冲突的。应用设计的时候要注意这一点。 <br>在下面的例子中，表tab_with_index的id字段有索引，name字段没有索引：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; alter table tab_with_index drop index name;</span><br></pre></td></tr></table></figure>
 <blockquote>
@@ -141,14 +141,14 @@
 </blockquote>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select * from tab_with_index where id = 1;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/i.png"></p>
-<p>InnoDB存储引擎使用相同索引键的阻塞例子 <br><img src="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/j.png"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031609546.png"></p>
+<p>InnoDB存储引擎使用相同索引键的阻塞例子 <br><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031609643.png"></p>
 <p>（3）当表有多个索引的时候，不同的事务可以使用不同的索引锁定不同的行，另外，不论是使用主键索引、唯一索引或普通索引，InnoDB都会使用行锁来对数据加锁。 <br>在下面的例子中，表tab_with_index的id字段有主键索引，name字段有普通索引：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; alter table tab_with_index add index name(name);</span><br></pre></td></tr></table></figure>
 <blockquote>
 <p>Query OK, 5 rows affected (0.23 sec) Records: 5 Duplicates: 0 <br>Warnings: 0</p>
 </blockquote>
-<p><strong>InnoDB存储引擎的表使用不同索引的阻塞例子</strong> <br><img src="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/k.png"></p>
+<p><strong>InnoDB存储引擎的表使用不同索引的阻塞例子</strong> <br><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031609643.png"></p>
 <p>（4）即便在条件中使用了索引字段，但是否使用索引来检索数据是由MySQL通过判断不同执行计划的代价来决定的，如果MySQL认为全表扫描效率更高，比如对一些很小的表，它就不会使用索引，这种情况下InnoDB将使用表锁，而不是行锁。因此，在分析锁冲突 时，别忘了检查SQL的执行计划，以确认是否真正使用了索引。 <br>比如，在tab_with_index表里的name字段有索引，但是name字段是varchar类型的，检索值的数据类型与索引字段不同，虽然MySQL能够进行数据类型转换，但却不会使用索引，从而导致InnoDB使用表锁。通过用explain检查两条SQL的执行计划，我们可以清楚地看到这一点。</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tab_with_index where name = 1 \G</span><br><span class="line">mysql&gt; explain select * from tab_with_index where name = &#x27;1&#x27; \G</span><br></pre></td></tr></table></figure>
 
@@ -158,7 +158,7 @@
 <p>是一个范围条件的检索，InnoDB不仅会对符合条件的empid值为101的记录加锁，也会对empid大于101（这些记录并不存在）的“间隙”加锁。</p>
 <p>InnoDB使用间隙锁的目的，一方面是为了防止幻读，以满足相关隔离级别的要求，对于上面的例子，要是不使用间隙锁，如果其他事务插入了empid大于100的任何记录，那么本事务如果再次执行上述语句，就会发生幻读；另外一方面，是为了满足其恢复和复制的需要。有关其恢复和复制对锁机制的影响，以及不同隔离级别下InnoDB使用间隙锁的情况，在后续的章节中会做进一步介绍。</p>
 <p>很显然，在使用范围条件检索并锁定记录时，InnoDB这种加锁机制会阻塞符合条件范围内键值的并发插入，这往往会造成严重的锁等待<strong>。因此，在实际应用开发中，尤其是并发插入比较多的应用，我们要尽量优化业务逻辑，尽量使用相等条件来访问更新数据，避免使用范围条件。</strong></p>
-<p>还要特别说明的是，InnoDB除了通过范围条件加锁时使用间隙锁外，如果使用相等条件请求给一个不存在的记录加锁，InnoDB也会使用间隙锁！下面这个例子假设emp表中只有101条记录，其empid的值分别是1,2,……,100,101。 <br>InnoDB存储引擎的间隙锁阻塞例子 <br><img src="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/l.png"></p>
+<p>还要特别说明的是，InnoDB除了通过范围条件加锁时使用间隙锁外，如果使用相等条件请求给一个不存在的记录加锁，InnoDB也会使用间隙锁！下面这个例子假设emp表中只有101条记录，其empid的值分别是1,2,……,100,101。 <br>InnoDB存储引擎的间隙锁阻塞例子 <br><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031610658.png"></p>
 <h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p>本文重点介绍了MySQL中MyISAM表级锁和InnoDB行级锁的实现特点，并讨论了两种存储引擎经常遇到的锁问题和解决办法。</p>
 <p><strong>对于MyISAM的表锁，主要讨论了以下几点：</strong> <br>（1）共享读锁（S）之间是兼容的，但共享读锁（S）与排他写锁（X）之间，以及排他写锁（X）之间是互斥的，也就是说读和写是串行的。 <br>（2）在一定条件下，MyISAM允许查询和插入并发执行，我们可以利用这一点来解决应用中对同一表查询和插入的锁争用问题。 <br>（3）MyISAM默认的锁调度机制是写优先，这并不一定适合所有应用，用户可以通过设置LOW_PRIORITY_UPDATES参数，或在INSERT、UPDATE、DELETE语句中指定LOW_PRIORITY选项来调节读写锁的争用。 <br>（4）由于表锁的锁定粒度大，读写之间又是串行的，因此，如果更新操作较多，MyISAM表可能会出现严重的锁等待，可以考虑采用InnoDB表来减少锁冲突。</p>
 <p><strong>对于InnoDB表，本文主要讨论了以下几项内容：</strong> <br>（1）InnoDB的行锁是基于索引实现的，如果不通过索引访问数据，InnoDB会使用表锁。 <br>（2）介绍了InnoDB间隙锁（Next-key)机制，以及InnoDB使用间隙锁的原因。 <br>在不同的隔离级别下，InnoDB的锁机制和一致性读策略不同。</p>
@@ -179,13 +179,171 @@
         <category>编程艺术</category>
       </categories>
       <tags>
-        <tag>Mysql</tag>
+        <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySQL常见优化汇总</title>
+    <url>/2016/02/03/MySQL%E4%BC%98%E5%8C%96%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<h2 id="查询优化"><a href="#查询优化" class="headerlink" title="查询优化"></a>查询优化</h2><h3 id="MySQL查询过程"><a href="#MySQL查询过程" class="headerlink" title="MySQL查询过程"></a>MySQL查询过程</h3><ol>
+<li>客户端发送一条查询给服务器；</li>
+<li>服务器先会检查查询缓存，如果命中了缓存，则立即返回存储在缓存中的结果；</li>
+<li>服务器端进行SQL解析、预处理，再由优化器生成对应的执行计划；</li>
+<li>MySQL根据优化器生成的执行计划，调用存储引擎的API来执行查询；</li>
+<li>将结果返回给客户端。</li>
+</ol>
+<h3 id="慢查询"><a href="#慢查询" class="headerlink" title="慢查询"></a>慢查询</h3><ol>
+<li>是否向数据库请求了不必要的数据；</li>
+<li>是否扫描了过多的数据，衡量查询开销三个指标：响应时间、扫描行数、返回行数；</li>
+<li>没有索引或者没有用到索引；</li>
+</ol>
+<h3 id="开启慢查询日志"><a href="#开启慢查询日志" class="headerlink" title="开启慢查询日志"></a>开启慢查询日志</h3><ul>
+<li>方法一：全局变量设置</li>
+</ul>
+<p>将 <code>slow_query_log</code> 全局变量设置为“ON”状态</p>
+<blockquote>
+<p>mysql&gt; set global slow_query_log=’ON’; </p>
+</blockquote>
+<p>设置慢查询日志存放的位置</p>
+<blockquote>
+<p>mysql&gt; set global slow_query_log_file=’/usr/local/mysql/data/slow.log’;</p>
+</blockquote>
+<p>查询超过1秒就记录</p>
+<blockquote>
+<p>mysql&gt; set global long_query_time=1;</p>
+</blockquote>
+<ul>
+<li>方法二：配置文件设置</li>
+</ul>
+<p>修改配置文件 <code>my.cnf</code> ，在 <code>[mysqld]</code> 下的下方加入</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld] </span><br><span class="line">slow_query_log = ON </span><br><span class="line">slow_query_log_file = /usr/local/mysql/data/slow.log </span><br><span class="line">long_query_time = 1</span><br></pre></td></tr></table></figure>
+<p>重启MySQL服务</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">service mysqld restart</span><br></pre></td></tr></table></figure>
+
+<h3 id="查询优化神器explain"><a href="#查询优化神器explain" class="headerlink" title="查询优化神器explain"></a>查询优化神器explain</h3><p>语法：<code>EXPLAIN SELECT * from user_info WHERE id &lt; 300;</code></p>
+<p>EXPLAIN 命令的输出内容大致如下:</p>
+<blockquote>
+<p>mysql&gt; explain select * from user_info where id = 2;<br> id: 1<br>select_type: SIMPLE<br>table: user_info<br>type: const<br>possible_keys: PRIMARY<br>key: PRIMARY<br>key_len: 8<br>ref: const<br>rows: 1 filtered: 100.00<br>Extra: NULL<br>1 row in set, 1 warning (0.00 sec)</p>
+</blockquote>
+<p>各列的含义如下:</p>
+<ul>
+<li>id: SELECT 查询的标识符. 每个 SELECT 都会自动分配一个唯一的标识符</li>
+<li>select_type: SELECT 查询的类型.</li>
+<li>table: 查询的是哪个表</li>
+<li><strong>type: 显示连接使用的类型</strong></li>
+<li>possible_keys: 此次查询中可能选用的索引</li>
+<li>key: 此次查询中确切使用到的索引</li>
+<li>key_len:使用的索引的长度</li>
+<li><strong>ref:显示索引的哪一列被使用了</strong></li>
+<li><strong>rows: 显示此查询一共扫描了多少行. 这个是一个估计值</strong></li>
+<li>filtered: 表示此查询条件所过滤的数据的百分比</li>
+<li>extra: 额外的信息</li>
+</ul>
+<p><code>type</code> 参数可以帮助我们判断此次查询是全表扫描还是索引扫描，它的值有以下几种：</p>
+<ul>
+<li>system</li>
+</ul>
+<p>表中只有一条数据，这个类型是特殊的 const 类型。</p>
+<ul>
+<li>const</li>
+</ul>
+<p>针对主键或唯一索引的等值查询扫描，最多只返回一行数据，const 查询速度非常快。</p>
+<blockquote>
+<p>实例：explain select * from user_info where id = 2</p>
+</blockquote>
+<ul>
+<li>eq_ref</li>
+</ul>
+<p>此类型通常出现在多表的 join 查询，表示对于前表的每一个结果，都只能匹配到后表的一行结果，并且查询的比较操作通常是 =，查询效率较高。索引是UNIQUE或PRIMARY KEY。</p>
+<blockquote>
+<p>实例： explain select * from user_info, order_info where user_info.id = order_info.user_id</p>
+</blockquote>
+<ul>
+<li>ref</li>
+</ul>
+<p>此类型通常出现在多表的 join 查询，针对于非唯一或非主键索引, 或者是使用了最左前缀规则索引的查询。</p>
+<ul>
+<li>range</li>
+</ul>
+<p>表示使用索引范围查询, 通过索引字段范围获取表中部分数据记录. 这个类型通常出现在 =, &lt;&gt;, &gt;, &gt;=, &lt;, &lt;=, IS NULL, &lt;=&gt;, BETWEEN, IN() 操作中。</p>
+<blockquote>
+<p>实例： EXPLAIN SELECT  *  FROM user_info WHERE id BETWEEN 2 AND 8</p>
+</blockquote>
+<ul>
+<li>index</li>
+</ul>
+<p>表示全索引扫描和ALL类型类似，只不过ALL类型是全表扫描，而index类型则仅仅扫描所有的索引而不扫描数据。</p>
+<p>index类型通常出现在所要查询的数据直接在索引树中可以获取到而不需要扫描数据这种场景下，这个时候，Extra字段显示为Using index。</p>
+<ul>
+<li>all</li>
+</ul>
+<p>表示全表扫描，这个类型的查询是性能最差的查询之一，通常来说, 我们的查询不应该出现ALL类型的查询，因为这样的查询在数据量大的情况下，对数据库的性能来说是巨大的灾难，如果一个查询是ALL类型查询，通常情况下可以对相应的字段添加索引来避免。</p>
+<p><code>rows</code> 显示MYSQL执行查询的行数，简单且重要，数值越大越不好，说明没有用好索引。</p>
+<h3 id="查询优化注意点"><a href="#查询优化注意点" class="headerlink" title="查询优化注意点"></a>查询优化注意点</h3><ol>
+<li>不要使用 select * from table ，用具体的字段列表代替“*”，不要返回用不到的任何字段。</li>
+<li>对查询进行优化，应尽量避免全表扫描，首先应考虑在 where 及 order by 涉及的列上建立索引。</li>
+<li>当只要一行数据时使用LIMIT1。</li>
+<li>尽量不用负向查询（!=、NOT IN…）。</li>
+<li>尽量用in查询代替or条件。</li>
+</ol>
+<h2 id="索引优化"><a href="#索引优化" class="headerlink" title="索引优化"></a>索引优化</h2><h3 id="索引简介"><a href="#索引简介" class="headerlink" title="索引简介"></a>索引简介</h3><ol>
+<li><p><strong>单列索引</strong><br>由关键字KEY或INDEX定义的索引，其唯一任务是加快对数据的访问速度， 它的sql格式是<br><code>CREATE INDEX IndexName ON TableName(字段名(length))</code><br>或者<br><code>ALTER TABLE TableName ADD INDEX IndexName(字段名(length))</code></p>
+</li>
+<li><p><strong>唯一索引</strong><br>与普通索引类似，不同的是唯一索引要求所有的列的值是唯一的，这一点和主键索引一样，区别是它允许有空值，其sql格式是<br><code>CREATE UNIQUE INDEX IndexName ON TableName(字段名(length))</code><br>或者 <br><code>ALTER TABLE TableName ADD UNIQUE (columnList) </code></p>
+</li>
+<li><p><strong>组合索引</strong><br>一个表中含有多个单列索引不代表是组合索引，通俗一点讲，组合索引是:<strong>包含多个字段但是只有一个索引名称</strong>，其sql格式是<br><code>CREATE INDEX IndexName On TableName(字段名(length), 字段名(length),...)</code>，如果建立了组合索引<code>(nickname,account,createTime)</code> ，那么他实际包含的是3个索引:<br><code>(nickname)</code>、<code>(nickname,account)</code>、<code>(nickname,account,createTime)</code>。</p>
+</li>
+</ol>
+<h3 id="索引使用需要注意的点"><a href="#索引使用需要注意的点" class="headerlink" title="索引使用需要注意的点"></a>索引使用需要注意的点</h3><ol>
+<li><p><strong>负向条件查询不能使用索引</strong><br><code>select * from order where status!=0 and stauts!=1</code><br><code>not in/not exists</code> 都不是好习惯，可以优化为in查询：<br><code>select * from order where status in(2,3)</code></p>
+</li>
+<li><p><strong>前导模糊查询无法使用索引</strong><br><code>select * from order where desc like &#39;%XX&#39;</code> 无法使用索引<br><code>select * from order where desc like &#39;XX%&#39;</code> 使用到了索引
+ </p>
+</li>
+<li><p><strong>在属性上进行计算不能命中索引</strong><br><code>select * from order where YEAR(date) &lt; = &#39;2017&#39;</code><br>即使date上建立了索引，也会全表扫描，可优化为值计算：<br><code>select * from order where date &lt; = CURDATE()</code><br>或者：<br><code>select * from order where date &lt; = &#39;2017-01-01&#39;</code></p>
+</li>
+<li><p><strong>复合索引最左前缀，并不是指SQL语句的where顺序要和复合索引一致</strong><br>用户表中建立了(login_name, passwd)的复合索引<br><code>select * from user where login_name=? and passwd=?</code><br><code>select * from user where passwd=? and login_name=?</code><br>都能够命中索引<br><code>select * from user where login_name=?</code><br>也能命中索引，满足复合索引最左前缀<br><code>select * from user where passwd=?</code><br>不能命中索引，不满足复合索引最左前缀</p>
+</li>
+<li><p><strong>数据区分度不大的字段不宜使用索引</strong><br><code>select * from user where sex=1</code><br>原因：SQL是根据表中数据来进行查询优化的，当索引列有大量数据重复时，SQL查询可能不会去利用索引。</p>
+</li>
+<li><p><strong>强制类型转换会全表扫描</strong><br><code>select * from user where telphone=13416348194</code><br>如果telphone为varchar类型，数据库会进行强制类型转换而导致索引失效。</p>
+</li>
+</ol>
+<h2 id="表结构优化"><a href="#表结构优化" class="headerlink" title="表结构优化"></a>表结构优化</h2><h3 id="表的设计规范"><a href="#表的设计规范" class="headerlink" title="表的设计规范"></a>表的设计规范</h3><ol>
+<li><strong>永远为每张表设置一个主键</strong>      </li>
+</ol>
+<ul>
+<li>主键递增，数据行写入可以提高插入性能</li>
+<li>主键要选择较短的数据类型，因为较短的数据类型可以有效的减少索引的磁盘空间，提高索引的缓存效率</li>
+</ul>
+<ol start="2">
+<li><strong>尽可能的使用 <code>NOT NULL</code></strong>     </li>
+</ol>
+<ul>
+<li><code>null</code> 的列使索引更加复杂，对MySQL来说更难优化</li>
+<li><code>null</code> 值需要更多的存储空间，无论是表还是索引中每行中的null的列都需要额外的空间来标识</li>
+<li>对 <code>null</code> 做处理的时候，只能采用 <code>is null</code> 或 <code>is not null</code>，而不能采用<code>=</code>、<code>in</code>、<code>&lt;</code>、<code>&lt;&gt;</code>、<code>!=</code>、<code>not in</code>这些操作符号</li>
+</ul>
+<ol start="3">
+<li><p><strong>必须使用InnoDB存储引擎</strong><br>支持事务、行级锁、并发性能更好、CPU及内存缓存页优化使得资源利用率更高</p>
+</li>
+<li><p><strong>必须使用UTF8字符集</strong><br>无需转码，无乱码风险，节省空间</p>
+</li>
+<li><p><strong>字段类型尽量使用最小、最简单的数据类型</strong><br>如用 <code>TINYINT</code> 代替 <code>INT</code>，<code>VARCHAR</code> 的长度只分配真正需要的空间<br>占用更少的磁盘、内容、CPU缓存，大大减少IO开销</p>
+</li>
+</ol>
+]]></content>
+      <categories>
+        <category>编程艺术</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
       </tags>
   </entry>
   <entry>
     <title>《小狗钱钱》书中的精华都在这了</title>
     <url>/2020/09/24/%E3%80%8A%E5%B0%8F%E7%8B%97%E9%92%B1%E9%92%B1%E3%80%8B%E8%AF%BB%E5%90%8E%E6%84%9F/</url>
-    <content><![CDATA[<p><img src="/2020/09/24/%E3%80%8A%E5%B0%8F%E7%8B%97%E9%92%B1%E9%92%B1%E3%80%8B%E8%AF%BB%E5%90%8E%E6%84%9F/1.png"></p>
+    <content><![CDATA[<p><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031629594.png"></p>
 <h3 id="初见"><a href="#初见" class="headerlink" title="初见"></a>初见</h3><p>初次看《小狗钱钱》，竟有一种莫名的感动，在我看来，书中的小狗钱钱，就像来自未来的次世代机器人，通晓世间的一切，而它愿意把关于金钱的一切都告诉主人公，我就这样跟随着主人公的脚步，贪婪的吸收着他们之间交流的一切，生怕错过了这一窥探金钱真谛的机会。</p>
 <span id="more"></span>
 <p>可以说，这本书就是《富爸爸穷爸爸》的童话版，虽然讲的道理大同小异，但是作者用更通俗易懂、更具实操性的叙述方式，将自身实现财务自由所用到的武功招式及内功心法一一展示给读者，使读者读来神清气爽，一气呵成，易于接受，是学习理财不可多得的入门书籍。</p>
@@ -254,7 +412,7 @@
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">acme.sh --set-default-ca --server zerossl</span><br></pre></td></tr></table></figure>
 
 <h3 id="配置DNS-API"><a href="#配置DNS-API" class="headerlink" title="配置DNS API"></a>配置DNS API</h3><p>本文使用 DNS 验证的方法来验证域名，<code>acme.sh</code> 可以通过 DNS 提供商的 API 自动设置验证记录，具体用法详见文档：<a href="https://github.com/acmesh-official/acme.sh/wiki/dnsapi">https://github.com/acmesh-official/acme.sh/wiki/dnsapi</a><br>常用的 CloudFlare 、 DNSPod 、 CloudXNS 、阿里云 等DNS服务都支持。</p>
-<p>以阿里云为例，登录后台找到账号的秘钥(建议创建子账号来专门管理此功能)：<br><img src="/2020/08/15/%E4%BD%BF%E7%94%A8acme-sh%E7%94%B3%E8%AF%B7%E5%85%8D%E8%B4%B9%E7%9A%84HTTPS%E8%AF%81%E4%B9%A6/AccessKey.png"><br>如果你使用的是子账号，一定要给子账号开通以下权限：<br><img src="/2020/08/15/%E4%BD%BF%E7%94%A8acme-sh%E7%94%B3%E8%AF%B7%E5%85%8D%E8%B4%B9%E7%9A%84HTTPS%E8%AF%81%E4%B9%A6/%E9%98%BF%E9%87%8C%E4%BA%91dns%E5%AD%90%E8%B4%A6%E5%8F%B7%E6%8E%88%E6%9D%83.png"><br>接下来执行下面命令即可：</p>
+<p>以阿里云为例，登录后台找到账号的秘钥(建议创建子账号来专门管理此功能)：<br><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031634278.png"><br>如果你使用的是子账号，一定要给子账号开通以下权限：<br><img src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031634007.png"><br>接下来执行下面命令即可：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export Ali_Key=&quot;****************************&quot;</span><br><span class="line">export Ali_Secret=&quot;**************************&quot; </span><br></pre></td></tr></table></figure>
 
 <h3 id="签发证书"><a href="#签发证书" class="headerlink" title="签发证书"></a>签发证书</h3><p>以zmtupian.com为例，该域名使用阿里云解析，在上面的步骤中已经配置好阿里云DNS API</p>

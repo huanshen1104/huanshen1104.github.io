@@ -1,0 +1,347 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MySQL常见优化汇总 | 青戈的博客</title><meta name="keywords" content="MySQL"><meta name="author" content="青戈"><meta name="copyright" content="青戈"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="查询优化MySQL查询过程 客户端发送一条查询给服务器； 服务器先会检查查询缓存，如果命中了缓存，则立即返回存储在缓存中的结果； 服务器端进行SQL解析、预处理，再由优化器生成对应的执行计划； MySQL根据优化器生成的执行计划，调用存储引擎的API来执行查询； 将结果返回给客户端。  慢查询 是否向数据库请求了不必要的数据； 是否扫描了过多的数据，衡量查询开销三个指标：响应时间、扫描行数、返回行">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL常见优化汇总">
+<meta property="og:url" content="https://huanshen1104.github.io/2016/02/03/MySQL%E4%BC%98%E5%8C%96%E6%80%BB%E7%BB%93/index.html">
+<meta property="og:site_name" content="青戈的博客">
+<meta property="og:description" content="查询优化MySQL查询过程 客户端发送一条查询给服务器； 服务器先会检查查询缓存，如果命中了缓存，则立即返回存储在缓存中的结果； 服务器端进行SQL解析、预处理，再由优化器生成对应的执行计划； MySQL根据优化器生成的执行计划，调用存储引擎的API来执行查询； 将结果返回给客户端。  慢查询 是否向数据库请求了不必要的数据； 是否扫描了过多的数据，衡量查询开销三个指标：响应时间、扫描行数、返回行">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031614620.jpg">
+<meta property="article:published_time" content="2016-02-03T03:23:26.000Z">
+<meta property="article:modified_time" content="2021-12-14T09:12:29.134Z">
+<meta property="article:author" content="青戈">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031614620.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://huanshen1104.github.io/2016/02/03/MySQL%E4%BC%98%E5%8C%96%E6%80%BB%E7%BB%93/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//s4.cnzz.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css" media="print" onload="this.media='all'"><script async="async" data-pjax="data-pjax" src="https://s4.cnzz.com/z_stat.php?id=1274914070&amp;web_id=1274914070"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":false,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: true,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'MySQL常见优化汇总',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2021-12-14 17:12:29'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const fontSizeVal = saveToLocal.get('global-font-size')
+    if (fontSizeVal !== undefined) {
+      document.documentElement.style.setProperty('--global-font-size', fontSizeVal + 'px')
+    }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="青戈的博客" type="application/atom+xml">
+</head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src= "data:image/gif;base64,R0lGODdhAQABAPAAAMPDwwAAACwAAAAAAQABAAACAkQBADs=" data-lazy-src="/img/avatar.gif" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">5</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">4</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/zhaji/"><i class="fa-fw fas fa-link"></i><span> 札记</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031614620.jpg')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">青戈的博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/zhaji/"><i class="fa-fw fas fa-link"></i><span> 札记</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">MySQL常见优化汇总</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="fa-fw post-meta-icon far fa-calendar-alt"></i><span class="post-meta-label">发表于</span><time datetime="2016-02-03T03:23:26.000Z" title="undefined 2016-02-03 11:23:26">2016-02-03</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%BC%96%E7%A8%8B%E8%89%BA%E6%9C%AF/">编程艺术</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">2k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>7分钟</span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h2 id="查询优化"><a href="#查询优化" class="headerlink" title="查询优化"></a>查询优化</h2><h3 id="MySQL查询过程"><a href="#MySQL查询过程" class="headerlink" title="MySQL查询过程"></a>MySQL查询过程</h3><ol>
+<li>客户端发送一条查询给服务器；</li>
+<li>服务器先会检查查询缓存，如果命中了缓存，则立即返回存储在缓存中的结果；</li>
+<li>服务器端进行SQL解析、预处理，再由优化器生成对应的执行计划；</li>
+<li>MySQL根据优化器生成的执行计划，调用存储引擎的API来执行查询；</li>
+<li>将结果返回给客户端。</li>
+</ol>
+<h3 id="慢查询"><a href="#慢查询" class="headerlink" title="慢查询"></a>慢查询</h3><ol>
+<li>是否向数据库请求了不必要的数据；</li>
+<li>是否扫描了过多的数据，衡量查询开销三个指标：响应时间、扫描行数、返回行数；</li>
+<li>没有索引或者没有用到索引；</li>
+</ol>
+<h3 id="开启慢查询日志"><a href="#开启慢查询日志" class="headerlink" title="开启慢查询日志"></a>开启慢查询日志</h3><ul>
+<li>方法一：全局变量设置</li>
+</ul>
+<p>将 <code>slow_query_log</code> 全局变量设置为“ON”状态</p>
+<blockquote>
+<p>mysql&gt; set global slow_query_log=’ON’; </p>
+</blockquote>
+<p>设置慢查询日志存放的位置</p>
+<blockquote>
+<p>mysql&gt; set global slow_query_log_file=’/usr/local/mysql/data/slow.log’;</p>
+</blockquote>
+<p>查询超过1秒就记录</p>
+<blockquote>
+<p>mysql&gt; set global long_query_time=1;</p>
+</blockquote>
+<ul>
+<li>方法二：配置文件设置</li>
+</ul>
+<p>修改配置文件 <code>my.cnf</code> ，在 <code>[mysqld]</code> 下的下方加入</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld] </span><br><span class="line">slow_query_log = ON </span><br><span class="line">slow_query_log_file = /usr/local/mysql/data/slow.log </span><br><span class="line">long_query_time = 1</span><br></pre></td></tr></table></figure>
+<p>重启MySQL服务</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">service mysqld restart</span><br></pre></td></tr></table></figure>
+
+<h3 id="查询优化神器explain"><a href="#查询优化神器explain" class="headerlink" title="查询优化神器explain"></a>查询优化神器explain</h3><p>语法：<code>EXPLAIN SELECT * from user_info WHERE id &lt; 300;</code></p>
+<p>EXPLAIN 命令的输出内容大致如下:</p>
+<blockquote>
+<p>mysql&gt; explain select * from user_info where id = 2;<br> id: 1<br>select_type: SIMPLE<br>table: user_info<br>type: const<br>possible_keys: PRIMARY<br>key: PRIMARY<br>key_len: 8<br>ref: const<br>rows: 1 filtered: 100.00<br>Extra: NULL<br>1 row in set, 1 warning (0.00 sec)</p>
+</blockquote>
+<p>各列的含义如下:</p>
+<ul>
+<li>id: SELECT 查询的标识符. 每个 SELECT 都会自动分配一个唯一的标识符</li>
+<li>select_type: SELECT 查询的类型.</li>
+<li>table: 查询的是哪个表</li>
+<li><strong>type: 显示连接使用的类型</strong></li>
+<li>possible_keys: 此次查询中可能选用的索引</li>
+<li>key: 此次查询中确切使用到的索引</li>
+<li>key_len:使用的索引的长度</li>
+<li><strong>ref:显示索引的哪一列被使用了</strong></li>
+<li><strong>rows: 显示此查询一共扫描了多少行. 这个是一个估计值</strong></li>
+<li>filtered: 表示此查询条件所过滤的数据的百分比</li>
+<li>extra: 额外的信息</li>
+</ul>
+<p><code>type</code> 参数可以帮助我们判断此次查询是全表扫描还是索引扫描，它的值有以下几种：</p>
+<ul>
+<li>system</li>
+</ul>
+<p>表中只有一条数据，这个类型是特殊的 const 类型。</p>
+<ul>
+<li>const</li>
+</ul>
+<p>针对主键或唯一索引的等值查询扫描，最多只返回一行数据，const 查询速度非常快。</p>
+<blockquote>
+<p>实例：explain select * from user_info where id = 2</p>
+</blockquote>
+<ul>
+<li>eq_ref</li>
+</ul>
+<p>此类型通常出现在多表的 join 查询，表示对于前表的每一个结果，都只能匹配到后表的一行结果，并且查询的比较操作通常是 =，查询效率较高。索引是UNIQUE或PRIMARY KEY。</p>
+<blockquote>
+<p>实例： explain select * from user_info, order_info where user_info.id = order_info.user_id</p>
+</blockquote>
+<ul>
+<li>ref</li>
+</ul>
+<p>此类型通常出现在多表的 join 查询，针对于非唯一或非主键索引, 或者是使用了最左前缀规则索引的查询。</p>
+<ul>
+<li>range</li>
+</ul>
+<p>表示使用索引范围查询, 通过索引字段范围获取表中部分数据记录. 这个类型通常出现在 =, &lt;&gt;, &gt;, &gt;=, &lt;, &lt;=, IS NULL, &lt;=&gt;, BETWEEN, IN() 操作中。</p>
+<blockquote>
+<p>实例： EXPLAIN SELECT  *  FROM user_info WHERE id BETWEEN 2 AND 8</p>
+</blockquote>
+<ul>
+<li>index</li>
+</ul>
+<p>表示全索引扫描和ALL类型类似，只不过ALL类型是全表扫描，而index类型则仅仅扫描所有的索引而不扫描数据。</p>
+<p>index类型通常出现在所要查询的数据直接在索引树中可以获取到而不需要扫描数据这种场景下，这个时候，Extra字段显示为Using index。</p>
+<ul>
+<li>all</li>
+</ul>
+<p>表示全表扫描，这个类型的查询是性能最差的查询之一，通常来说, 我们的查询不应该出现ALL类型的查询，因为这样的查询在数据量大的情况下，对数据库的性能来说是巨大的灾难，如果一个查询是ALL类型查询，通常情况下可以对相应的字段添加索引来避免。</p>
+<p><code>rows</code> 显示MYSQL执行查询的行数，简单且重要，数值越大越不好，说明没有用好索引。</p>
+<h3 id="查询优化注意点"><a href="#查询优化注意点" class="headerlink" title="查询优化注意点"></a>查询优化注意点</h3><ol>
+<li>不要使用 select * from table ，用具体的字段列表代替“*”，不要返回用不到的任何字段。</li>
+<li>对查询进行优化，应尽量避免全表扫描，首先应考虑在 where 及 order by 涉及的列上建立索引。</li>
+<li>当只要一行数据时使用LIMIT1。</li>
+<li>尽量不用负向查询（!=、NOT IN…）。</li>
+<li>尽量用in查询代替or条件。</li>
+</ol>
+<h2 id="索引优化"><a href="#索引优化" class="headerlink" title="索引优化"></a>索引优化</h2><h3 id="索引简介"><a href="#索引简介" class="headerlink" title="索引简介"></a>索引简介</h3><ol>
+<li><p><strong>单列索引</strong><br>由关键字KEY或INDEX定义的索引，其唯一任务是加快对数据的访问速度， 它的sql格式是<br><code>CREATE INDEX IndexName ON TableName(字段名(length))</code><br>或者<br><code>ALTER TABLE TableName ADD INDEX IndexName(字段名(length))</code></p>
+</li>
+<li><p><strong>唯一索引</strong><br>与普通索引类似，不同的是唯一索引要求所有的列的值是唯一的，这一点和主键索引一样，区别是它允许有空值，其sql格式是<br><code>CREATE UNIQUE INDEX IndexName ON TableName(字段名(length))</code><br>或者 <br><code>ALTER TABLE TableName ADD UNIQUE (columnList) </code></p>
+</li>
+<li><p><strong>组合索引</strong><br>一个表中含有多个单列索引不代表是组合索引，通俗一点讲，组合索引是:<strong>包含多个字段但是只有一个索引名称</strong>，其sql格式是<br><code>CREATE INDEX IndexName On TableName(字段名(length), 字段名(length),...)</code>，如果建立了组合索引<code>(nickname,account,createTime)</code> ，那么他实际包含的是3个索引:<br><code>(nickname)</code>、<code>(nickname,account)</code>、<code>(nickname,account,createTime)</code>。</p>
+</li>
+</ol>
+<h3 id="索引使用需要注意的点"><a href="#索引使用需要注意的点" class="headerlink" title="索引使用需要注意的点"></a>索引使用需要注意的点</h3><ol>
+<li><p><strong>负向条件查询不能使用索引</strong><br><code>select * from order where status!=0 and stauts!=1</code><br><code>not in/not exists</code> 都不是好习惯，可以优化为in查询：<br><code>select * from order where status in(2,3)</code></p>
+</li>
+<li><p><strong>前导模糊查询无法使用索引</strong><br><code>select * from order where desc like &#39;%XX&#39;</code> 无法使用索引<br><code>select * from order where desc like &#39;XX%&#39;</code> 使用到了索引
+ </p>
+</li>
+<li><p><strong>在属性上进行计算不能命中索引</strong><br><code>select * from order where YEAR(date) &lt; = &#39;2017&#39;</code><br>即使date上建立了索引，也会全表扫描，可优化为值计算：<br><code>select * from order where date &lt; = CURDATE()</code><br>或者：<br><code>select * from order where date &lt; = &#39;2017-01-01&#39;</code></p>
+</li>
+<li><p><strong>复合索引最左前缀，并不是指SQL语句的where顺序要和复合索引一致</strong><br>用户表中建立了(login_name, passwd)的复合索引<br><code>select * from user where login_name=? and passwd=?</code><br><code>select * from user where passwd=? and login_name=?</code><br>都能够命中索引<br><code>select * from user where login_name=?</code><br>也能命中索引，满足复合索引最左前缀<br><code>select * from user where passwd=?</code><br>不能命中索引，不满足复合索引最左前缀</p>
+</li>
+<li><p><strong>数据区分度不大的字段不宜使用索引</strong><br><code>select * from user where sex=1</code><br>原因：SQL是根据表中数据来进行查询优化的，当索引列有大量数据重复时，SQL查询可能不会去利用索引。</p>
+</li>
+<li><p><strong>强制类型转换会全表扫描</strong><br><code>select * from user where telphone=13416348194</code><br>如果telphone为varchar类型，数据库会进行强制类型转换而导致索引失效。</p>
+</li>
+</ol>
+<h2 id="表结构优化"><a href="#表结构优化" class="headerlink" title="表结构优化"></a>表结构优化</h2><h3 id="表的设计规范"><a href="#表的设计规范" class="headerlink" title="表的设计规范"></a>表的设计规范</h3><ol>
+<li><strong>永远为每张表设置一个主键</strong>      </li>
+</ol>
+<ul>
+<li>主键递增，数据行写入可以提高插入性能</li>
+<li>主键要选择较短的数据类型，因为较短的数据类型可以有效的减少索引的磁盘空间，提高索引的缓存效率</li>
+</ul>
+<ol start="2">
+<li><strong>尽可能的使用 <code>NOT NULL</code></strong>     </li>
+</ol>
+<ul>
+<li><code>null</code> 的列使索引更加复杂，对MySQL来说更难优化</li>
+<li><code>null</code> 值需要更多的存储空间，无论是表还是索引中每行中的null的列都需要额外的空间来标识</li>
+<li>对 <code>null</code> 做处理的时候，只能采用 <code>is null</code> 或 <code>is not null</code>，而不能采用<code>=</code>、<code>in</code>、<code>&lt;</code>、<code>&lt;&gt;</code>、<code>!=</code>、<code>not in</code>这些操作符号</li>
+</ul>
+<ol start="3">
+<li><p><strong>必须使用InnoDB存储引擎</strong><br>支持事务、行级锁、并发性能更好、CPU及内存缓存页优化使得资源利用率更高</p>
+</li>
+<li><p><strong>必须使用UTF8字符集</strong><br>无需转码，无乱码风险，节省空间</p>
+</li>
+<li><p><strong>字段类型尽量使用最小、最简单的数据类型</strong><br>如用 <code>TINYINT</code> 代替 <code>INT</code>，<code>VARCHAR</code> 的长度只分配真正需要的空间<br>占用更少的磁盘、内容、CPU缓存，大大减少IO开销</p>
+</li>
+</ol>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/MySQL/">MySQL</a></div><div class="post_share"><div class="social-share" data-image="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031614620.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-full"><a href="/2017/11/15/%E6%9B%B4%E6%8D%A2%E7%94%B5%E8%84%91%E5%90%8E%EF%BC%8C%E5%A6%82%E4%BD%95%E7%BB%A7%E7%BB%AD%E4%BD%BF%E7%94%A8hexo%E6%9B%B4%E6%96%B0%E5%8D%9A%E5%AE%A2%EF%BC%9F/"><img class="prev-cover" src= "data:image/gif;base64,R0lGODdhAQABAPAAAMPDwwAAACwAAAAAAQABAAACAkQBADs=" data-lazy-src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031634217.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">更换电脑后，如何继续使用hexo更新博客？</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/" title="（转载）MySQL中的锁机制"><img class="cover" src= "data:image/gif;base64,R0lGODdhAQABAPAAAMPDwwAAACwAAAAAAQABAAACAkQBADs=" data-lazy-src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031614620.jpg" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2018-12-01</div><div class="title">（转载）MySQL中的锁机制</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src= "data:image/gif;base64,R0lGODdhAQABAPAAAMPDwwAAACwAAAAAAQABAAACAkQBADs=" data-lazy-src="/img/avatar.gif" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">青戈</div><div class="author-info__description">只想成为一个温柔而有趣的人~</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">5</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">4</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div></div><a class="button--animated" id="card-info-btn"><i class="fas fa-bookmark"></i><span>加入书签</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:huanshen1104@126.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="https://weibo.com/huanshen1104" target="_blank" title="Weibo"><i class="fab fa-weibo"></i></a><a class="social-icon" href="/atom.xml" target="_blank" title="RSS"><i class="fa fa-rss"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96"><span class="toc-number">1.</span> <span class="toc-text">查询优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#MySQL%E6%9F%A5%E8%AF%A2%E8%BF%87%E7%A8%8B"><span class="toc-number">1.1.</span> <span class="toc-text">MySQL查询过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%85%A2%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.2.</span> <span class="toc-text">慢查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%80%E5%90%AF%E6%85%A2%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97"><span class="toc-number">1.3.</span> <span class="toc-text">开启慢查询日志</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E7%A5%9E%E5%99%A8explain"><span class="toc-number">1.4.</span> <span class="toc-text">查询优化神器explain</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E6%B3%A8%E6%84%8F%E7%82%B9"><span class="toc-number">1.5.</span> <span class="toc-text">查询优化注意点</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E4%BC%98%E5%8C%96"><span class="toc-number">2.</span> <span class="toc-text">索引优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E7%AE%80%E4%BB%8B"><span class="toc-number">2.1.</span> <span class="toc-text">索引简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E4%BD%BF%E7%94%A8%E9%9C%80%E8%A6%81%E6%B3%A8%E6%84%8F%E7%9A%84%E7%82%B9"><span class="toc-number">2.2.</span> <span class="toc-text">索引使用需要注意的点</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A1%A8%E7%BB%93%E6%9E%84%E4%BC%98%E5%8C%96"><span class="toc-number">3.</span> <span class="toc-text">表结构优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A1%A8%E7%9A%84%E8%AE%BE%E8%AE%A1%E8%A7%84%E8%8C%83"><span class="toc-number">3.1.</span> <span class="toc-text">表的设计规范</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2020/09/24/%E3%80%8A%E5%B0%8F%E7%8B%97%E9%92%B1%E9%92%B1%E3%80%8B%E8%AF%BB%E5%90%8E%E6%84%9F/" title="《小狗钱钱》书中的精华都在这了"><img src= "data:image/gif;base64,R0lGODdhAQABAPAAAMPDwwAAACwAAAAAAQABAAACAkQBADs=" data-lazy-src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031629944.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="《小狗钱钱》书中的精华都在这了"/></a><div class="content"><a class="title" href="/2020/09/24/%E3%80%8A%E5%B0%8F%E7%8B%97%E9%92%B1%E9%92%B1%E3%80%8B%E8%AF%BB%E5%90%8E%E6%84%9F/" title="《小狗钱钱》书中的精华都在这了">《小狗钱钱》书中的精华都在这了</a><time datetime="2020-09-24T03:07:02.000Z" title="发表于 2020-09-24 11:07:02">2020-09-24</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2020/08/15/%E4%BD%BF%E7%94%A8acme-sh%E7%94%B3%E8%AF%B7%E5%85%8D%E8%B4%B9%E7%9A%84HTTPS%E8%AF%81%E4%B9%A6/" title="使用acme.sh申请免费的HTTPS证书"><img src= "data:image/gif;base64,R0lGODdhAQABAPAAAMPDwwAAACwAAAAAAQABAAACAkQBADs=" data-lazy-src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031633840.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="使用acme.sh申请免费的HTTPS证书"/></a><div class="content"><a class="title" href="/2020/08/15/%E4%BD%BF%E7%94%A8acme-sh%E7%94%B3%E8%AF%B7%E5%85%8D%E8%B4%B9%E7%9A%84HTTPS%E8%AF%81%E4%B9%A6/" title="使用acme.sh申请免费的HTTPS证书">使用acme.sh申请免费的HTTPS证书</a><time datetime="2020-08-15T07:48:36.000Z" title="发表于 2020-08-15 15:48:36">2020-08-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/" title="（转载）MySQL中的锁机制"><img src= "data:image/gif;base64,R0lGODdhAQABAPAAAMPDwwAAACwAAAAAAQABAAACAkQBADs=" data-lazy-src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031614620.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="（转载）MySQL中的锁机制"/></a><div class="content"><a class="title" href="/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/" title="（转载）MySQL中的锁机制">（转载）MySQL中的锁机制</a><time datetime="2018-12-01T07:56:43.000Z" title="发表于 2018-12-01 15:56:43">2018-12-01</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2017/11/15/%E6%9B%B4%E6%8D%A2%E7%94%B5%E8%84%91%E5%90%8E%EF%BC%8C%E5%A6%82%E4%BD%95%E7%BB%A7%E7%BB%AD%E4%BD%BF%E7%94%A8hexo%E6%9B%B4%E6%96%B0%E5%8D%9A%E5%AE%A2%EF%BC%9F/" title="更换电脑后，如何继续使用hexo更新博客？"><img src= "data:image/gif;base64,R0lGODdhAQABAPAAAMPDwwAAACwAAAAAAQABAAACAkQBADs=" data-lazy-src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031634217.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="更换电脑后，如何继续使用hexo更新博客？"/></a><div class="content"><a class="title" href="/2017/11/15/%E6%9B%B4%E6%8D%A2%E7%94%B5%E8%84%91%E5%90%8E%EF%BC%8C%E5%A6%82%E4%BD%95%E7%BB%A7%E7%BB%AD%E4%BD%BF%E7%94%A8hexo%E6%9B%B4%E6%96%B0%E5%8D%9A%E5%AE%A2%EF%BC%9F/" title="更换电脑后，如何继续使用hexo更新博客？">更换电脑后，如何继续使用hexo更新博客？</a><time datetime="2017-11-15T08:59:54.000Z" title="发表于 2017-11-15 16:59:54">2017-11-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2016/02/03/MySQL%E4%BC%98%E5%8C%96%E6%80%BB%E7%BB%93/" title="MySQL常见优化汇总"><img src= "data:image/gif;base64,R0lGODdhAQABAPAAAMPDwwAAACwAAAAAAQABAAACAkQBADs=" data-lazy-src="https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031614620.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="MySQL常见优化汇总"/></a><div class="content"><a class="title" href="/2016/02/03/MySQL%E4%BC%98%E5%8C%96%E6%80%BB%E7%BB%93/" title="MySQL常见优化汇总">MySQL常见优化汇总</a><time datetime="2016-02-03T03:23:26.000Z" title="发表于 2016-02-03 11:23:26">2016-02-03</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url('https://cdn.jsdelivr.net/gh/huanshen1104/blog-imgs/202112031614620.jpg')"><div id="footer-wrap"><div class="copyright">&copy;2016 - 2021 By 青戈</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="font-plus" type="button" title="放大字体"><i class="fas fa-plus"></i></button><button id="font-minus" type="button" title="缩小字体"><i class="fas fa-minus"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><script src="/js/search/local-search.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'JIlVt1rBPPGziIIoEAKys1Os-gzGzoHsz',
+      appKey: 'BhloPKTG5fMaRSyoB6I76Ys5',
+      placeholder: '有什么想说的，在这里留言呗~',
+      avatar: 'mp',
+      meta: 'nick,mail,link'.split(','),
+      pageSize: '10',
+      lang: 'zh-CN',
+      recordIP: true,
+      serverURLs: '',
+      emojiCDN: '',
+      emojiMaps: "",
+      enableQQ: false,
+      path: window.location.pathname,
+      requiredFields: ["nick,mail"],
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !false) {
+  if (false) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div></div></body></html>
