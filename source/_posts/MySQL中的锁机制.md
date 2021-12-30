@@ -1,5 +1,5 @@
 ---
-title: （转载）MySQL中的锁机制
+title: MySQL中的锁机制
 date: 2018-12-01 15:56:43
 categories: [编程艺术]
 tags: [MySQL]
@@ -321,5 +321,5 @@ InnoDB存储引擎的间隙锁阻塞例子 
 *   尽量用相等条件访问数据，这样可以避免间隙锁对并发插入的影响； 不要申请超过实际需要的锁级别；除非必须，查询时不要显示加锁；
 *   对于一些特定的事务，可以使用表锁来提高处理速度或减少死锁的可能。
 
-> 原文：https://www.cnblogs.com/leedaily/p/8378779.html
+> 转自：https://www.cnblogs.com/leedaily/p/8378779.html
 
