@@ -86,8 +86,8 @@ default_category: uncategorized
 category_map:
   开卷有益: reading
   网站建设: web
-tag_map:
-  理财: money
+#tag_map:
+#  理财: money
 
 # Metadata elements
 ## https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta

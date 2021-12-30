@@ -318,7 +318,7 @@ valine:
   appId: JIlVt1rBPPGziIIoEAKys1Os-gzGzoHsz
   appKey: BhloPKTG5fMaRSyoB6I76Ys5
   pageSize: 10 # comment list page size
-  avatar: mp # gravatar style https://valine.js.org/#/avatar
+  avatar: '' # gravatar style https://valine.js.org/#/avatar
   lang: zh-CN # i18n: zh-CN/zh-TW/en/ja
   placeholder: 有什么想说的，在这里留言呗~
   guest_info: nick,mail,link # valine comment header info (nick/mail/link)
