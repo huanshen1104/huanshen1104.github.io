@@ -112,164 +112,6 @@
       </tags>
   </entry>
   <entry>
-    <title>MySQL常见优化汇总</title>
-    <url>/2016/02/03/MySQL%E4%BC%98%E5%8C%96%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<h2 id="查询优化"><a href="#查询优化" class="headerlink" title="查询优化"></a>查询优化</h2><h3 id="MySQL查询过程"><a href="#MySQL查询过程" class="headerlink" title="MySQL查询过程"></a>MySQL查询过程</h3><ol>
-<li>客户端发送一条查询给服务器；</li>
-<li>服务器先会检查查询缓存，如果命中了缓存，则立即返回存储在缓存中的结果；</li>
-<li>服务器端进行SQL解析、预处理，再由优化器生成对应的执行计划；</li>
-<li>MySQL根据优化器生成的执行计划，调用存储引擎的API来执行查询；</li>
-<li>将结果返回给客户端。</li>
-</ol>
-<h3 id="慢查询"><a href="#慢查询" class="headerlink" title="慢查询"></a>慢查询</h3><ol>
-<li>是否向数据库请求了不必要的数据；</li>
-<li>是否扫描了过多的数据，衡量查询开销三个指标：响应时间、扫描行数、返回行数；</li>
-<li>没有索引或者没有用到索引；</li>
-</ol>
-<h3 id="开启慢查询日志"><a href="#开启慢查询日志" class="headerlink" title="开启慢查询日志"></a>开启慢查询日志</h3><ul>
-<li>方法一：全局变量设置</li>
-</ul>
-<p>将 <code>slow_query_log</code> 全局变量设置为“ON”状态</p>
-<blockquote>
-<p>mysql&gt; set global slow_query_log=’ON’; </p>
-</blockquote>
-<p>设置慢查询日志存放的位置</p>
-<blockquote>
-<p>mysql&gt; set global slow_query_log_file=’/usr/local/mysql/data/slow.log’;</p>
-</blockquote>
-<p>查询超过1秒就记录</p>
-<blockquote>
-<p>mysql&gt; set global long_query_time=1;</p>
-</blockquote>
-<ul>
-<li>方法二：配置文件设置</li>
-</ul>
-<p>修改配置文件 <code>my.cnf</code> ，在 <code>[mysqld]</code> 下的下方加入</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld] </span><br><span class="line">slow_query_log = ON </span><br><span class="line">slow_query_log_file = /usr/local/mysql/data/slow.log </span><br><span class="line">long_query_time = 1</span><br></pre></td></tr></table></figure>
-<p>重启MySQL服务</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">service mysqld restart</span><br></pre></td></tr></table></figure>
-
-<h3 id="查询优化神器explain"><a href="#查询优化神器explain" class="headerlink" title="查询优化神器explain"></a>查询优化神器explain</h3><p>语法：<code>EXPLAIN SELECT * from user_info WHERE id &lt; 300;</code></p>
-<p>EXPLAIN 命令的输出内容大致如下:</p>
-<blockquote>
-<p>mysql&gt; explain select * from user_info where id = 2;<br> id: 1<br>select_type: SIMPLE<br>table: user_info<br>type: const<br>possible_keys: PRIMARY<br>key: PRIMARY<br>key_len: 8<br>ref: const<br>rows: 1 filtered: 100.00<br>Extra: NULL<br>1 row in set, 1 warning (0.00 sec)</p>
-</blockquote>
-<p>各列的含义如下:</p>
-<ul>
-<li>id: SELECT 查询的标识符. 每个 SELECT 都会自动分配一个唯一的标识符</li>
-<li>select_type: SELECT 查询的类型.</li>
-<li>table: 查询的是哪个表</li>
-<li><strong>type: 显示连接使用的类型</strong></li>
-<li>possible_keys: 此次查询中可能选用的索引</li>
-<li>key: 此次查询中确切使用到的索引</li>
-<li>key_len:使用的索引的长度</li>
-<li><strong>ref:显示索引的哪一列被使用了</strong></li>
-<li><strong>rows: 显示此查询一共扫描了多少行. 这个是一个估计值</strong></li>
-<li>filtered: 表示此查询条件所过滤的数据的百分比</li>
-<li>extra: 额外的信息</li>
-</ul>
-<p><code>type</code> 参数可以帮助我们判断此次查询是全表扫描还是索引扫描，它的值有以下几种：</p>
-<ul>
-<li>system</li>
-</ul>
-<p>表中只有一条数据，这个类型是特殊的 const 类型。</p>
-<ul>
-<li>const</li>
-</ul>
-<p>针对主键或唯一索引的等值查询扫描，最多只返回一行数据，const 查询速度非常快。</p>
-<blockquote>
-<p>实例：explain select * from user_info where id = 2</p>
-</blockquote>
-<ul>
-<li>eq_ref</li>
-</ul>
-<p>此类型通常出现在多表的 join 查询，表示对于前表的每一个结果，都只能匹配到后表的一行结果，并且查询的比较操作通常是 =，查询效率较高。索引是UNIQUE或PRIMARY KEY。</p>
-<blockquote>
-<p>实例： explain select * from user_info, order_info where user_info.id = order_info.user_id</p>
-</blockquote>
-<ul>
-<li>ref</li>
-</ul>
-<p>此类型通常出现在多表的 join 查询，针对于非唯一或非主键索引, 或者是使用了最左前缀规则索引的查询。</p>
-<ul>
-<li>range</li>
-</ul>
-<p>表示使用索引范围查询, 通过索引字段范围获取表中部分数据记录. 这个类型通常出现在 =, &lt;&gt;, &gt;, &gt;=, &lt;, &lt;=, IS NULL, &lt;=&gt;, BETWEEN, IN() 操作中。</p>
-<blockquote>
-<p>实例： EXPLAIN SELECT  *  FROM user_info WHERE id BETWEEN 2 AND 8</p>
-</blockquote>
-<ul>
-<li>index</li>
-</ul>
-<p>表示全索引扫描和ALL类型类似，只不过ALL类型是全表扫描，而index类型则仅仅扫描所有的索引而不扫描数据。</p>
-<p>index类型通常出现在所要查询的数据直接在索引树中可以获取到而不需要扫描数据这种场景下，这个时候，Extra字段显示为Using index。</p>
-<ul>
-<li>all</li>
-</ul>
-<p>表示全表扫描，这个类型的查询是性能最差的查询之一，通常来说, 我们的查询不应该出现ALL类型的查询，因为这样的查询在数据量大的情况下，对数据库的性能来说是巨大的灾难，如果一个查询是ALL类型查询，通常情况下可以对相应的字段添加索引来避免。</p>
-<p><code>rows</code> 显示MYSQL执行查询的行数，简单且重要，数值越大越不好，说明没有用好索引。</p>
-<h3 id="查询优化注意点"><a href="#查询优化注意点" class="headerlink" title="查询优化注意点"></a>查询优化注意点</h3><ol>
-<li>不要使用 select * from table ，用具体的字段列表代替“*”，不要返回用不到的任何字段。</li>
-<li>对查询进行优化，应尽量避免全表扫描，首先应考虑在 where 及 order by 涉及的列上建立索引。</li>
-<li>当只要一行数据时使用LIMIT1。</li>
-<li>尽量不用负向查询（!=、NOT IN…）。</li>
-<li>尽量用in查询代替or条件。</li>
-</ol>
-<h2 id="索引优化"><a href="#索引优化" class="headerlink" title="索引优化"></a>索引优化</h2><h3 id="索引简介"><a href="#索引简介" class="headerlink" title="索引简介"></a>索引简介</h3><ol>
-<li><p><strong>单列索引</strong><br>由关键字KEY或INDEX定义的索引，其唯一任务是加快对数据的访问速度， 它的sql格式是<br><code>CREATE INDEX IndexName ON TableName(字段名(length))</code><br>或者<br><code>ALTER TABLE TableName ADD INDEX IndexName(字段名(length))</code></p>
-</li>
-<li><p><strong>唯一索引</strong><br>与普通索引类似，不同的是唯一索引要求所有的列的值是唯一的，这一点和主键索引一样，区别是它允许有空值，其sql格式是<br><code>CREATE UNIQUE INDEX IndexName ON TableName(字段名(length))</code><br>或者 <br><code>ALTER TABLE TableName ADD UNIQUE (columnList) </code></p>
-</li>
-<li><p><strong>组合索引</strong><br>一个表中含有多个单列索引不代表是组合索引，通俗一点讲，组合索引是:<strong>包含多个字段但是只有一个索引名称</strong>，其sql格式是<br><code>CREATE INDEX IndexName On TableName(字段名(length), 字段名(length),...)</code>，如果建立了组合索引<code>(nickname,account,createTime)</code> ，那么他实际包含的是3个索引:<br><code>(nickname)</code>、<code>(nickname,account)</code>、<code>(nickname,account,createTime)</code>。</p>
-</li>
-</ol>
-<h3 id="索引使用需要注意的点"><a href="#索引使用需要注意的点" class="headerlink" title="索引使用需要注意的点"></a>索引使用需要注意的点</h3><ol>
-<li><p><strong>负向条件查询不能使用索引</strong><br><code>select * from order where status!=0 and stauts!=1</code><br><code>not in/not exists</code> 都不是好习惯，可以优化为in查询：<br><code>select * from order where status in(2,3)</code></p>
-</li>
-<li><p><strong>前导模糊查询无法使用索引</strong><br><code>select * from order where desc like &#39;%XX&#39;</code> 无法使用索引<br><code>select * from order where desc like &#39;XX%&#39;</code> 使用到了索引
- </p>
-</li>
-<li><p><strong>在属性上进行计算不能命中索引</strong><br><code>select * from order where YEAR(date) &lt; = &#39;2017&#39;</code><br>即使date上建立了索引，也会全表扫描，可优化为值计算：<br><code>select * from order where date &lt; = CURDATE()</code><br>或者：<br><code>select * from order where date &lt; = &#39;2017-01-01&#39;</code></p>
-</li>
-<li><p><strong>复合索引最左前缀，并不是指SQL语句的where顺序要和复合索引一致</strong><br>用户表中建立了(login_name, passwd)的复合索引<br><code>select * from user where login_name=? and passwd=?</code><br><code>select * from user where passwd=? and login_name=?</code><br>都能够命中索引<br><code>select * from user where login_name=?</code><br>也能命中索引，满足复合索引最左前缀<br><code>select * from user where passwd=?</code><br>不能命中索引，不满足复合索引最左前缀</p>
-</li>
-<li><p><strong>数据区分度不大的字段不宜使用索引</strong><br><code>select * from user where sex=1</code><br>原因：SQL是根据表中数据来进行查询优化的，当索引列有大量数据重复时，SQL查询可能不会去利用索引。</p>
-</li>
-<li><p><strong>强制类型转换会全表扫描</strong><br><code>select * from user where telphone=13416348194</code><br>如果telphone为varchar类型，数据库会进行强制类型转换而导致索引失效。</p>
-</li>
-</ol>
-<h2 id="表结构优化"><a href="#表结构优化" class="headerlink" title="表结构优化"></a>表结构优化</h2><h3 id="表的设计规范"><a href="#表的设计规范" class="headerlink" title="表的设计规范"></a>表的设计规范</h3><ol>
-<li><strong>永远为每张表设置一个主键</strong>      </li>
-</ol>
-<ul>
-<li>主键递增，数据行写入可以提高插入性能</li>
-<li>主键要选择较短的数据类型，因为较短的数据类型可以有效的减少索引的磁盘空间，提高索引的缓存效率</li>
-</ul>
-<ol start="2">
-<li><strong>尽可能的使用 <code>NOT NULL</code></strong>     </li>
-</ol>
-<ul>
-<li><code>null</code> 的列使索引更加复杂，对MySQL来说更难优化</li>
-<li><code>null</code> 值需要更多的存储空间，无论是表还是索引中每行中的null的列都需要额外的空间来标识</li>
-<li>对 <code>null</code> 做处理的时候，只能采用 <code>is null</code> 或 <code>is not null</code>，而不能采用<code>=</code>、<code>in</code>、<code>&lt;</code>、<code>&lt;&gt;</code>、<code>!=</code>、<code>not in</code>这些操作符号</li>
-</ul>
-<ol start="3">
-<li><p><strong>必须使用InnoDB存储引擎</strong><br>支持事务、行级锁、并发性能更好、CPU及内存缓存页优化使得资源利用率更高</p>
-</li>
-<li><p><strong>必须使用UTF8字符集</strong><br>无需转码，无乱码风险，节省空间</p>
-</li>
-<li><p><strong>字段类型尽量使用最小、最简单的数据类型</strong><br>如用 <code>TINYINT</code> 代替 <code>INT</code>，<code>VARCHAR</code> 的长度只分配真正需要的空间<br>占用更少的磁盘、内容、CPU缓存，大大减少IO开销</p>
-</li>
-</ol>
-]]></content>
-      <categories>
-        <category>编程艺术</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL中的锁机制</title>
     <url>/2018/12/01/MySQL%E4%B8%AD%E7%9A%84%E9%94%81%E6%9C%BA%E5%88%B6/</url>
     <content><![CDATA[<p><strong>锁是计算机协调多个进程或线程并发访问某一资源的机制</strong>。在数据库中，除传统的 计算资源（如CPU、RAM、I/O等）的争用以外，数据也是一种供许多用户共享的资源。如何保证数据并发访问的一致性、有效性是所有数据库必须解决的一 个问题，锁冲突也是影响数据库并发访问性能的一个重要因素。从这个角度来说，锁对数据库而言显得尤其重要，也更加复杂。本章我们着重讨论MySQL锁机制 的特点，常见的锁问题，以及解决MySQL锁问题的一些方法或建议。<br> <br>Mysql用到了很多这种锁机制，比如行锁，表锁等，读锁，写锁等，都是在做操作之前先上锁。这些锁统称为悲观锁(Pessimistic Lock)。</p>
@@ -493,6 +335,164 @@
       </categories>
       <tags>
         <tag>理财</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySQL常见优化汇总</title>
+    <url>/2016/02/03/MySQL%E4%BC%98%E5%8C%96%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<h2 id="查询优化"><a href="#查询优化" class="headerlink" title="查询优化"></a>查询优化</h2><h3 id="MySQL查询过程"><a href="#MySQL查询过程" class="headerlink" title="MySQL查询过程"></a>MySQL查询过程</h3><ol>
+<li>客户端发送一条查询给服务器；</li>
+<li>服务器先会检查查询缓存，如果命中了缓存，则立即返回存储在缓存中的结果；</li>
+<li>服务器端进行SQL解析、预处理，再由优化器生成对应的执行计划；</li>
+<li>MySQL根据优化器生成的执行计划，调用存储引擎的API来执行查询；</li>
+<li>将结果返回给客户端。</li>
+</ol>
+<h3 id="慢查询"><a href="#慢查询" class="headerlink" title="慢查询"></a>慢查询</h3><ol>
+<li>是否向数据库请求了不必要的数据；</li>
+<li>是否扫描了过多的数据，衡量查询开销三个指标：响应时间、扫描行数、返回行数；</li>
+<li>没有索引或者没有用到索引；</li>
+</ol>
+<h3 id="开启慢查询日志"><a href="#开启慢查询日志" class="headerlink" title="开启慢查询日志"></a>开启慢查询日志</h3><ul>
+<li>方法一：全局变量设置</li>
+</ul>
+<p>将 <code>slow_query_log</code> 全局变量设置为“ON”状态</p>
+<blockquote>
+<p>mysql&gt; set global slow_query_log=’ON’; </p>
+</blockquote>
+<p>设置慢查询日志存放的位置</p>
+<blockquote>
+<p>mysql&gt; set global slow_query_log_file=’/usr/local/mysql/data/slow.log’;</p>
+</blockquote>
+<p>查询超过1秒就记录</p>
+<blockquote>
+<p>mysql&gt; set global long_query_time=1;</p>
+</blockquote>
+<ul>
+<li>方法二：配置文件设置</li>
+</ul>
+<p>修改配置文件 <code>my.cnf</code> ，在 <code>[mysqld]</code> 下的下方加入</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld] </span><br><span class="line">slow_query_log = ON </span><br><span class="line">slow_query_log_file = /usr/local/mysql/data/slow.log </span><br><span class="line">long_query_time = 1</span><br></pre></td></tr></table></figure>
+<p>重启MySQL服务</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">service mysqld restart</span><br></pre></td></tr></table></figure>
+
+<h3 id="查询优化神器explain"><a href="#查询优化神器explain" class="headerlink" title="查询优化神器explain"></a>查询优化神器explain</h3><p>语法：<code>EXPLAIN SELECT * from user_info WHERE id &lt; 300;</code></p>
+<p>EXPLAIN 命令的输出内容大致如下:</p>
+<blockquote>
+<p>mysql&gt; explain select * from user_info where id = 2;<br> id: 1<br>select_type: SIMPLE<br>table: user_info<br>type: const<br>possible_keys: PRIMARY<br>key: PRIMARY<br>key_len: 8<br>ref: const<br>rows: 1 filtered: 100.00<br>Extra: NULL<br>1 row in set, 1 warning (0.00 sec)</p>
+</blockquote>
+<p>各列的含义如下:</p>
+<ul>
+<li>id: SELECT 查询的标识符. 每个 SELECT 都会自动分配一个唯一的标识符</li>
+<li>select_type: SELECT 查询的类型.</li>
+<li>table: 查询的是哪个表</li>
+<li><strong>type: 显示连接使用的类型</strong></li>
+<li>possible_keys: 此次查询中可能选用的索引</li>
+<li>key: 此次查询中确切使用到的索引</li>
+<li>key_len:使用的索引的长度</li>
+<li><strong>ref:显示索引的哪一列被使用了</strong></li>
+<li><strong>rows: 显示此查询一共扫描了多少行. 这个是一个估计值</strong></li>
+<li>filtered: 表示此查询条件所过滤的数据的百分比</li>
+<li>extra: 额外的信息</li>
+</ul>
+<p><code>type</code> 参数可以帮助我们判断此次查询是全表扫描还是索引扫描，它的值有以下几种：</p>
+<ul>
+<li>system</li>
+</ul>
+<p>表中只有一条数据，这个类型是特殊的 const 类型。</p>
+<ul>
+<li>const</li>
+</ul>
+<p>针对主键或唯一索引的等值查询扫描，最多只返回一行数据，const 查询速度非常快。</p>
+<blockquote>
+<p>实例：explain select * from user_info where id = 2</p>
+</blockquote>
+<ul>
+<li>eq_ref</li>
+</ul>
+<p>此类型通常出现在多表的 join 查询，表示对于前表的每一个结果，都只能匹配到后表的一行结果，并且查询的比较操作通常是 =，查询效率较高。索引是UNIQUE或PRIMARY KEY。</p>
+<blockquote>
+<p>实例： explain select * from user_info, order_info where user_info.id = order_info.user_id</p>
+</blockquote>
+<ul>
+<li>ref</li>
+</ul>
+<p>此类型通常出现在多表的 join 查询，针对于非唯一或非主键索引, 或者是使用了最左前缀规则索引的查询。</p>
+<ul>
+<li>range</li>
+</ul>
+<p>表示使用索引范围查询, 通过索引字段范围获取表中部分数据记录. 这个类型通常出现在 =, &lt;&gt;, &gt;, &gt;=, &lt;, &lt;=, IS NULL, &lt;=&gt;, BETWEEN, IN() 操作中。</p>
+<blockquote>
+<p>实例： EXPLAIN SELECT  *  FROM user_info WHERE id BETWEEN 2 AND 8</p>
+</blockquote>
+<ul>
+<li>index</li>
+</ul>
+<p>表示全索引扫描和ALL类型类似，只不过ALL类型是全表扫描，而index类型则仅仅扫描所有的索引而不扫描数据。</p>
+<p>index类型通常出现在所要查询的数据直接在索引树中可以获取到而不需要扫描数据这种场景下，这个时候，Extra字段显示为Using index。</p>
+<ul>
+<li>all</li>
+</ul>
+<p>表示全表扫描，这个类型的查询是性能最差的查询之一，通常来说, 我们的查询不应该出现ALL类型的查询，因为这样的查询在数据量大的情况下，对数据库的性能来说是巨大的灾难，如果一个查询是ALL类型查询，通常情况下可以对相应的字段添加索引来避免。</p>
+<p><code>rows</code> 显示MYSQL执行查询的行数，简单且重要，数值越大越不好，说明没有用好索引。</p>
+<h3 id="查询优化注意点"><a href="#查询优化注意点" class="headerlink" title="查询优化注意点"></a>查询优化注意点</h3><ol>
+<li>不要使用 select * from table ，用具体的字段列表代替“*”，不要返回用不到的任何字段。</li>
+<li>对查询进行优化，应尽量避免全表扫描，首先应考虑在 where 及 order by 涉及的列上建立索引。</li>
+<li>当只要一行数据时使用LIMIT1。</li>
+<li>尽量不用负向查询（!=、NOT IN…）。</li>
+<li>尽量用in查询代替or条件。</li>
+</ol>
+<h2 id="索引优化"><a href="#索引优化" class="headerlink" title="索引优化"></a>索引优化</h2><h3 id="索引简介"><a href="#索引简介" class="headerlink" title="索引简介"></a>索引简介</h3><ol>
+<li><p><strong>单列索引</strong><br>由关键字KEY或INDEX定义的索引，其唯一任务是加快对数据的访问速度， 它的sql格式是<br><code>CREATE INDEX IndexName ON TableName(字段名(length))</code><br>或者<br><code>ALTER TABLE TableName ADD INDEX IndexName(字段名(length))</code></p>
+</li>
+<li><p><strong>唯一索引</strong><br>与普通索引类似，不同的是唯一索引要求所有的列的值是唯一的，这一点和主键索引一样，区别是它允许有空值，其sql格式是<br><code>CREATE UNIQUE INDEX IndexName ON TableName(字段名(length))</code><br>或者 <br><code>ALTER TABLE TableName ADD UNIQUE (columnList) </code></p>
+</li>
+<li><p><strong>组合索引</strong><br>一个表中含有多个单列索引不代表是组合索引，通俗一点讲，组合索引是:<strong>包含多个字段但是只有一个索引名称</strong>，其sql格式是<br><code>CREATE INDEX IndexName On TableName(字段名(length), 字段名(length),...)</code>，如果建立了组合索引<code>(nickname,account,createTime)</code> ，那么他实际包含的是3个索引:<br><code>(nickname)</code>、<code>(nickname,account)</code>、<code>(nickname,account,createTime)</code>。</p>
+</li>
+</ol>
+<h3 id="索引使用需要注意的点"><a href="#索引使用需要注意的点" class="headerlink" title="索引使用需要注意的点"></a>索引使用需要注意的点</h3><ol>
+<li><p><strong>负向条件查询不能使用索引</strong><br><code>select * from order where status!=0 and stauts!=1</code><br><code>not in/not exists</code> 都不是好习惯，可以优化为in查询：<br><code>select * from order where status in(2,3)</code></p>
+</li>
+<li><p><strong>前导模糊查询无法使用索引</strong><br><code>select * from order where desc like &#39;%XX&#39;</code> 无法使用索引<br><code>select * from order where desc like &#39;XX%&#39;</code> 使用到了索引
+ </p>
+</li>
+<li><p><strong>在属性上进行计算不能命中索引</strong><br><code>select * from order where YEAR(date) &lt; = &#39;2017&#39;</code><br>即使date上建立了索引，也会全表扫描，可优化为值计算：<br><code>select * from order where date &lt; = CURDATE()</code><br>或者：<br><code>select * from order where date &lt; = &#39;2017-01-01&#39;</code></p>
+</li>
+<li><p><strong>复合索引最左前缀，并不是指SQL语句的where顺序要和复合索引一致</strong><br>用户表中建立了(login_name, passwd)的复合索引<br><code>select * from user where login_name=? and passwd=?</code><br><code>select * from user where passwd=? and login_name=?</code><br>都能够命中索引<br><code>select * from user where login_name=?</code><br>也能命中索引，满足复合索引最左前缀<br><code>select * from user where passwd=?</code><br>不能命中索引，不满足复合索引最左前缀</p>
+</li>
+<li><p><strong>数据区分度不大的字段不宜使用索引</strong><br><code>select * from user where sex=1</code><br>原因：SQL是根据表中数据来进行查询优化的，当索引列有大量数据重复时，SQL查询可能不会去利用索引。</p>
+</li>
+<li><p><strong>强制类型转换会全表扫描</strong><br><code>select * from user where telphone=13416348194</code><br>如果telphone为varchar类型，数据库会进行强制类型转换而导致索引失效。</p>
+</li>
+</ol>
+<h2 id="表结构优化"><a href="#表结构优化" class="headerlink" title="表结构优化"></a>表结构优化</h2><h3 id="表的设计规范"><a href="#表的设计规范" class="headerlink" title="表的设计规范"></a>表的设计规范</h3><ol>
+<li><strong>永远为每张表设置一个主键</strong>      </li>
+</ol>
+<ul>
+<li>主键递增，数据行写入可以提高插入性能</li>
+<li>主键要选择较短的数据类型，因为较短的数据类型可以有效的减少索引的磁盘空间，提高索引的缓存效率</li>
+</ul>
+<ol start="2">
+<li><strong>尽可能的使用 <code>NOT NULL</code></strong>     </li>
+</ol>
+<ul>
+<li><code>null</code> 的列使索引更加复杂，对MySQL来说更难优化</li>
+<li><code>null</code> 值需要更多的存储空间，无论是表还是索引中每行中的null的列都需要额外的空间来标识</li>
+<li>对 <code>null</code> 做处理的时候，只能采用 <code>is null</code> 或 <code>is not null</code>，而不能采用<code>=</code>、<code>in</code>、<code>&lt;</code>、<code>&lt;&gt;</code>、<code>!=</code>、<code>not in</code>这些操作符号</li>
+</ul>
+<ol start="3">
+<li><p><strong>必须使用InnoDB存储引擎</strong><br>支持事务、行级锁、并发性能更好、CPU及内存缓存页优化使得资源利用率更高</p>
+</li>
+<li><p><strong>必须使用UTF8字符集</strong><br>无需转码，无乱码风险，节省空间</p>
+</li>
+<li><p><strong>字段类型尽量使用最小、最简单的数据类型</strong><br>如用 <code>TINYINT</code> 代替 <code>INT</code>，<code>VARCHAR</code> 的长度只分配真正需要的空间<br>占用更少的磁盘、内容、CPU缓存，大大减少IO开销</p>
+</li>
+</ol>
+]]></content>
+      <categories>
+        <category>编程艺术</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
       </tags>
   </entry>
   <entry>
